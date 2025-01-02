@@ -9,7 +9,6 @@ from utils.tools import get_pr_metadata
 
 from composio import Action
 
-
 def main() -> None:
     """Run the agent."""
     owner, repo_name, pull_number = from_github()
@@ -18,11 +17,13 @@ def main() -> None:
 
     graph, composio_toolset = get_graph(repo_path)
 
+    humanMessage_pr_agent = f"You have {owner}/{repo_name} cloned at your current working directory. Review PR {pull_number} on this repository and create comments on the same PR"
+    humanMessage_testplan_agent = f"You have cloned {owner}/{repo_name} into your current working directory. Review PR {pull_number} on this repository and write a test plan, then create a comment on the same PR with the review and test plan"
     run_result = graph.invoke(
         {
             "messages": [
                 HumanMessage(
-                    content=f"You have {owner}/{repo_name} cloned at your current working directory. Review PR {pull_number} on this repository and create comments on the same PR"
+                    content=humanMessage_testplan_agent
                 )
             ]
         },

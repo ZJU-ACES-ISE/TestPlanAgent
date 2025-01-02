@@ -11,7 +11,7 @@ from langchain_openai import ChatOpenAI
 from langgraph.graph import END, START, StateGraph
 from langgraph.prebuilt import ToolNode
 from prompt.prompts import PR_COMMENT_PROMPT, PR_FETCHER_PROMPT, REPO_ANALYZER_PROMPT
-from prompt.testplan_prompt import PR_TEST_PLAN_GENERATOR_PROMPT
+from prompt.testplan_prompt import PR_TEST_PLAN_FETCH_PROMPT, PR_TEST_PLAN_GENERATOR_PROMPT
 from tenacity import retry, stop_after_attempt, wait_exponential
 from utils.tools import DiffFormatter, get_pr_diff, get_pr_metadata
 
@@ -150,9 +150,7 @@ def get_graph_testplan(repo_path):
     comment_on_pr_tools = [
         *toolset.get_tools(
             actions=[
-                Action.GITHUB_GET_A_COMMIT,
                 Action.GITHUB_CREATE_A_REVIEW_COMMENT_FOR_A_PULL_REQUEST,
-                Action.GITHUB_CREATE_AN_ISSUE_COMMENT,
             ]
         )
     ]
@@ -228,10 +226,10 @@ def get_graph_testplan(repo_path):
             return prompt | llm
 
     fetch_pr_agent_name = "Fetch-PR-Agent"
-    fetch_pr_agent = create_agent(PR_FETCHER_PROMPT, fetch_pr_tools)
+    fetch_pr_agent = create_agent(PR_TEST_PLAN_FETCH_PROMPT, fetch_pr_tools)
     fetch_pr_agent_node = create_agent_node(fetch_pr_agent, fetch_pr_agent_name)
 
-    comment_on_pr_agent_name = "Comment-On-PR-Agent"
+    comment_on_pr_agent_name = "Draft-Testplan-And-Comment-On-PR-Agent"
     comment_on_pr_agent = create_agent(PR_TEST_PLAN_GENERATOR_PROMPT, comment_on_pr_tools)
     comment_on_pr_agent_node = create_agent_node(comment_on_pr_agent, comment_on_pr_agent_name)
 
@@ -257,7 +255,7 @@ def get_graph_testplan(repo_path):
 
         if last_ai_message.tool_calls:
             return "fetch_pr_tools_node"
-        if "COMMENT ON PR" in last_ai_message.content:
+        if "TEST PLAN INFO GATHERED" in last_ai_message.content:
             return "commnet_on_pr"
         return "continue"
 
@@ -290,7 +288,7 @@ def get_graph_testplan(repo_path):
         if last_ai_message.tool_calls:
             return "comment_on_pr_tools_node"
         
-        if "REVIEW COMPLETED" in last_ai_message.content:
+        if "TEST PLAN DRAFTED" in last_ai_message.content:
             return "__end__"
         return "continue"
 
@@ -312,6 +310,7 @@ def get_graph_testplan(repo_path):
     graph = workflow.compile()
 
     return graph, toolset
+
 
 def get_graph_review(repo_path):
     toolset = ComposioToolSet(
