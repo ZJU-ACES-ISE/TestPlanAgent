@@ -1,3 +1,4 @@
+import base64
 from bs4 import BeautifulSoup
 import json
 from urllib.parse import urlparse
@@ -118,6 +119,12 @@ def get_allcode(code_url, token):
         soup = BeautifulSoup(response.text, 'html.parser')
         return soup
 
+def get_allcode_by_api(code_url, headers):
+    
+    response = requests.get(code_url, headers=headers)
+    file_content = response.json()['content']
+    decoded_content = base64.b64decode(file_content).decode('utf-8')
+    return decoded_content
 
 def extract_info_from_pr(url, b):
     info = {
@@ -125,8 +132,7 @@ def extract_info_from_pr(url, b):
         "项目star": [],
         "项目网址": url,
         "pr的文本描述": [],
-        "增加的代码": [],
-        "删减的代码": [],
+        "变更的代码": [],
         "最后的完整代码": []
     }
 
@@ -148,16 +154,16 @@ def extract_info_from_pr(url, b):
     owner = path_parts[1]
     repo = path_parts[2]
     pr_number = int(path_parts[4])
-    info["项目名称"] = repo
+    info["项目名称"] = owner+'/'+repo
 
     # 获取项目star
-    url2 = f"https://github.com/{owner}/{repo}"
-    response = requests.get(url2)
-    soup = BeautifulSoup(response.text, 'html.parser')
-    span = soup.find('span', id='repo-stars-counter-star')
-    if span:
-        number = span['title'].replace(',', '')
-        info["项目star"] = number
+    # url2 = f"https://github.com/{owner}/{repo}"
+    # response = requests.get(url2)
+    # soup = BeautifulSoup(response.text, 'html.parser')
+    # span = soup.find('span', id='repo-stars-counter-star')
+    # if span:
+    #     number = span['title'].replace(',', '')
+    #     info["项目star"] = number
 
     # 获取pr的文本描述
     headers = {
@@ -170,36 +176,51 @@ def extract_info_from_pr(url, b):
         data = response.json()
         info["pr的文本描述"] = str(data['body'])
 
-    # 获取代码变更及完整代码
-    url = url + "/files"
-    response = requests.get(url)
-    soup = BeautifulSoup(response.text, 'html.parser')
-    rows = soup.find_all('tr')
-    for row in rows:
-        code_td = row.find('td', class_='blob-code-addition')
-        if code_td:
-            code = code_td.get_text(strip=True)
-            info["增加的代码"].append(code)
-    for row in rows:
-        code_td = row.find('td', class_='blob-code-deletion')
-        if code_td:
-            code = code_td.get_text(strip=True)
-            info["删减的代码"].append(code)
+    # 获取完整代码及变更代码
+    files_url = f"https://api.github.com/repos/{owner}/{repo}/pulls/{pr_number}/files"
+    response = requests.get(files_url, headers=headers)
+    if response.status_code == 200:
+        data = response.json()
+        for file in data:
+            if file['filename'].endswith('.py'):
+                full_code_url = file['contents_url']
+                if full_code_url:
+                    all_code = get_allcode_by_api(full_code_url, headers)
+                    info["最后的完整代码"].append({file['filename'] : all_code})
+                if 'patch' in file:
+                    patch = file['patch']
+                    info['变更的代码'].append({file['filename']: patch})
 
-    # 完整代码
-    commit_details = get_pull_request_commits(owner, repo, pr_number, token)
-    if commit_details:
-        first_commit = commit_details[0]
-        sha = first_commit["sha"]
-        commit_details = get_pull_request_commits_sha(owner, repo, sha, token)
-        if commit_details:
-            code_url = commit_details["files"][0]["contents_url"]
-            code = get_code(code_url, token)
-            if code:
-                code_url = code
-                code_url_download = code_url["download_url"]
-                all_code = get_allcode(code_url_download, token)
-                info["最后的完整代码"] = str(all_code)
+    # # 获取代码变更及完整代码
+    # url = url + "/files"
+    # response = requests.get(url)
+    # soup = BeautifulSoup(response.text, 'html.parser')
+    # rows = soup.find_all('tr')
+    # for row in rows:
+    #     code_td = row.find('td', class_='blob-code-addition')
+    #     if code_td:
+    #         code = code_td.get_text(strip=True)
+    #         info["增加的代码"].append(code)
+    # for row in rows:
+    #     code_td = row.find('td', class_='blob-code-deletion')
+    #     if code_td:
+    #         code = code_td.get_text(strip=True)
+    #         info["删减的代码"].append(code)
+
+    # # 完整代码
+    # commit_details = get_pull_request_commits(owner, repo, pr_number, token)
+    # if commit_details:
+    #     first_commit = commit_details[0]
+    #     sha = first_commit["sha"]
+    #     commit_details = get_pull_request_commits_sha(owner, repo, sha, token)
+    #     if commit_details:
+    #         code_url = commit_details["files"][0]["contents_url"]
+    #         code = get_code(code_url, token)
+    #         if code:
+    #             code_url = code
+    #             code_url_download = code_url["download_url"]
+    #             all_code = get_allcode(code_url_download, token)
+    #             info["最后的完整代码"] = str(all_code)
     return info
 
 
@@ -457,7 +478,7 @@ def pr_list():
     # 定义查询的整体时间范围
     # 例如，从 2020-01-01 到 2024-12-31
     overall_start_date = datetime.datetime(2020, 1, 1)
-    overall_end_date = datetime.datetime(2024, 12, 31)
+    overall_end_date = datetime.datetime(2020, 1, 10)
 
     # 获取所有新的 Pull Requests
     all_prs = get_all_pull_requests_over_1000(base_query, overall_start_date, overall_end_date)
