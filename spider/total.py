@@ -478,7 +478,7 @@ def pr_list():
     # 定义查询的整体时间范围
     # 例如，从 2020-01-01 到 2024-12-31
     overall_start_date = datetime.datetime(2020, 1, 1)
-    overall_end_date = datetime.datetime(2020, 1, 10)
+    overall_end_date = datetime.datetime(2024, 12, 31)
 
     # 获取所有新的 Pull Requests
     all_prs = get_all_pull_requests_over_1000(base_query, overall_start_date, overall_end_date)
