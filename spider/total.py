@@ -465,12 +465,6 @@ def pr_list():
     return all_prs
 
 
-def save_pull_requests(file_path, pull_requests):
-    with open(file_path, 'w', encoding='utf-8') as f:
-        json.dump(pull_requests, f, ensure_ascii=False, indent=2)
-    print(f"Pull Requests have been saved to '{file_path}'.")
-
-
 if __name__ == "__main__":
     b = 1
     data = pr_list()
@@ -493,5 +487,6 @@ if __name__ == "__main__":
         b += 1
         print()
 
-    file_path = 'pull_requests.json'
-    save_pull_requests(file_path, pull_requests_list)
+    with open('pull_requests.txt', 'w') as file:
+        for item in pull_requests_list:
+            file.write(item + '\n')
