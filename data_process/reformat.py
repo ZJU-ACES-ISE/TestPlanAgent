@@ -1,7 +1,7 @@
 import json
 
 # 读取文件内容
-file_path = 'pull_requests.txt'
+file_path = 'spider/pull_requests.txt'
 
 with open(file_path, 'r', encoding='utf-8') as file:
     file_content = file.read()
