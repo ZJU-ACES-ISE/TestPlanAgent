@@ -206,3 +206,57 @@ def get_pr_metadata(owner: str, repo: str, pull_number: str, thought: str) -> t.
         },
     }
     return response
+
+@action(toolname="github")
+def Parse_PR_and_Remove_Test_Plan() -> int:
+    """
+    Parse PR and remove test plan
+
+    :return diff: .diff content for give pull request.
+    """
+    return 1
+
+@action(toolname="github")
+def GITHUB_GET_Files() -> int:
+    """
+    get pr all files
+
+    :return diff: .diff content for give pull request.
+    """
+    return 1
+
+@action(toolname="github")
+def Code_Analysis_And_Get_Func() -> int:
+    """
+    Code Analysis And Get Func
+
+    :return diff: .diff content for give pull request.
+    """
+    return 1
+
+@action(toolname="github")
+def Change_Type_Classification() -> int:
+    """
+    Change Type Classification
+
+    :return diff: .diff content for give pull request.
+    """
+    return 1
+
+@action(toolname="github")
+def Change_Impact_Scope_Determination() -> int:
+    """
+    Change impact scope determination
+
+    :return diff: .diff content for give pull request.
+    """
+    return 1
+
+@action(toolname="github")
+def Test_Plan_Generator() -> int:
+    """
+    Test plan generator
+
+    :return diff: .diff content for give pull request.
+    """
+    return 1
