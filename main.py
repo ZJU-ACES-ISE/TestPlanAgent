@@ -1,7 +1,7 @@
 import os
 import json
 
-from agent.agent import get_graph_testplan_1
+from agent.agent import get_graph_testplan_1, get_graph_testplan
 from utils.Serialization import AIMessageEncoder
 from utils.inputs import from_github
 from langchain_core.messages import HumanMessage
@@ -15,7 +15,7 @@ def main() -> None:
 
     repo_path = f"/home/veteran/projects/multiAgent/{repo_name}"
 
-    graph, _ = get_graph_testplan_1(repo_path)
+    graph, _ = get_graph_testplan(repo_path)
 
     humanMessage_pr_agent = f"You have {owner}/{repo_name} cloned at your current working directory. Review PR {pull_number} on this repository and create comments on the same PR"
     humanMessage_testplan_agent = f"You have cloned {owner}/{repo_name} into your current working directory. Review PR {pull_number} on this repository and write a test plan, then create a comment on the same PR with the review and test plan"
