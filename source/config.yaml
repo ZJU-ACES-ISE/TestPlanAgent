@@ -1,0 +1,12 @@
+Agent:
+  PR_url: https://api.github.com/repos/freedomofpress/securedrop-client/pulls/2299
+  diff_url: https://api.github.com/repos/freedomofpress/securedrop-client/pulls/2299/files
+  llm_model: gpt-4o
+  llm_url: https://api.gptsapi.net/v1/chat/completions
+  output_dir: ./result/formal_test/securedrop-client/prompt_v4_4/
+  output_file_name: gpt-4o_20250315_121546.txt
+CKG:
+  graph_pkl_dir: ./CKG/securedrop-client_graph.pkl
+  project_dir: /home/veteran/projects/multiAgent/TestPlanAgent/test_projects/securedrop-client
+Judge:
+  tmp_dir: ./result/formal_test/securedrop-client/tmp/

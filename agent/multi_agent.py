@@ -14,7 +14,7 @@ from prompt.prompts import PR_COMMENT_PROMPT, PR_FETCHER_PROMPT, REPO_ANALYZER_P
 from prompt.testplan_prompt_v1 import PR_TEST_PLAN_FETCH_PROMPT, PR_TEST_PLAN_GENERATOR_PROMPT
 from prompt.testplan_prompt_v2 import PR_NL_Content_Fetch_Prompt, PR_Code_Content_Fetch_Prompt, PR_Type_Impact_Scope_Determination_Prompt, PR_Test_Plan_Generate_Prompt
 from tenacity import retry, stop_after_attempt, wait_exponential
-from utils.tools import Change_Impact_Scope_Determination, Change_Type_Classification, Code_Analysis_And_Get_Func, DiffFormatter, GITHUB_GET_Files, Parse_PR_and_Remove_Test_Plan, Test_Plan_Generator, get_pr_diff, get_pr_metadata
+from utils.tools import Change_Impact_Scope_Determination, Change_Type_Classification, DiffFormatter, GITHUB_GET_Files_And_Get_Func, Get_PR_NL_Content, Parse_PR_and_Remove_Test_Plan, Test_Plan_Generator, get_pr_diff, get_pr_metadata
 
 from composio_langgraph import Action, App, ComposioToolSet, WorkspaceType
 
@@ -138,7 +138,7 @@ def get_graph_testplan_1(repo_path):
     fetch_pr_nl_content_tools = [
         *toolset.get_tools(
             actions=[
-                Action.GITHUB_GET_A_PULL_REQUEST,
+                Get_PR_NL_Content,
                 Parse_PR_and_Remove_Test_Plan
             ]
         )
@@ -147,8 +147,7 @@ def get_graph_testplan_1(repo_path):
     fetch_pr_code_content_tools = [
         *toolset.get_tools(
             actions=[
-                GITHUB_GET_Files,
-                Code_Analysis_And_Get_Func
+                GITHUB_GET_Files_And_Get_Func,
             ]
         )
     ]

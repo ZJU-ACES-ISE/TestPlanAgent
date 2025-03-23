@@ -1,7 +1,8 @@
 import os
 import json
 
-from agent.agent import get_graph_testplan_1, get_graph_testplan
+from agent.multi_agent import get_graph_testplan_1
+from agent.test_plan_agent import get_graph_testplan
 from utils.Serialization import AIMessageEncoder
 from utils.inputs import from_github
 from langchain_core.messages import HumanMessage
@@ -24,7 +25,7 @@ def main() -> None:
         {
             "messages": [
                 HumanMessage(
-                    content=humanMessage_testplan_agent
+                    content=humanMessage_testplan_agent_v1
                 )
             ]
         },

@@ -2,11 +2,6 @@ import os
 import requests
 import json
 
-import yaml
-
-with open('./source/config.yaml', 'r') as f:
-    config = yaml.load(f, Loader=yaml.FullLoader)
-
 def get_pull_request(owner, repo, pr_number, token):
     
     # GitHub API URL to get a pull request
@@ -61,54 +56,35 @@ def pr_commits():
 
 def llm_restructure_pr_body(pr_body):
 
-    api_key = os.environ.get("OPENAI_API_KEY")
-    url = config['Agent']['llm_url'] 
-
+    # api_key = os.environ.get("OPENAI_API_KEY")
+    api_key = "sk-bdb2caae8edf4fc1a809919a192074b3"
+    # url = "https://api.gptsapi.net/v1/chat/completions"  # 自定义的base URL
+    url = "https://api.deepseek.com/v1/chat/completions"  # 自定义的base URL
     # Prompt to guide the LLM in restructuring the PR body
     user_prompt = f"""
-        Please carefully analyze the following pull request description to extract and separate the test plan from other content.
+    Please analyze the following pull request description to determine whether there is a test plan, and then reconstruct it into three parts:
+    1. "Description of changes": A brief description of the changes made.
+    2. "Test plan": A detailed plan for how the changes should be executed or tested.
+    3. "Others": Any additional relevant information or context.
+    If there is no test plan, please follow the following steps:
+    1. "Description of changes": A brief description of the changes made.
+    2. "Test plan": "None"
+    3. "Others": Any additional relevant information or context.
 
-        ### INSTRUCTIONS:
+    PR Description:
+    {pr_body}
 
-        1. IDENTIFY the test plan section by looking for:- Explicit "Test Plan" headings (case-insensitive, may include "Testing Plan", "How to Test", "Testing",etc.)
-        - Sections describing testing procedures, verification steps, or validation methods
-        - Instructions for reviewers on how to verify the changes
-
-        2. PRESERVE EXACTLY:
-        - All original formatting including code blocks, bullet points, and indentation
-        - All code snippets within the test plan (do not summarize or alter code)
-        - All links, references, and technical details
-
-        3. DO NOT:
-        - Add your own commentary or analysis about the test plan
-        - Modify or "improve" the test plan content
-        - Include non-test plan content in the test plan section
-
-        4. SEPARATE content into two distinct sections:
-        - "Description of changes": Everything that is NOT part of the test plan
-        - "Test plan": ONLY the content specifically related to testing or verification
-
-        5. FORMAT the output JSON correctly:
-        - Escape all double quotes (") with a backslash (\\")
-        - Do not add any unnecessary backslashes
-        - Convert all carriage returns ('\\r') to newlines ('\\n')
-        - Convert all newlines ('\\n') to escaped newlines ('\\\\n')
-
-        If no test plan is found, use "None" for the test plan value.
-
-        ### PR Description:
-        {pr_body}
-
-        Return ONLY the following JSON format (preserve all formatting within the values):
-        {{
-            "Description of changes": "<change_description_with_original_formatting>",
-            "Test plan": "<test_plan_with_original_formatting_or_None>"
-        }}
+    Provide the result in the following format:
+    {{
+        "Description of changes": "<change_description>",
+        "Test plan": "<execution_plan>",
+        "Others": "<other>"
+    }}
     """
 
     # 定义请求体
     data = {
-        "model": f"{config['Agent']['llm_model']}",  
+        "model": "deepseek-chat",  
         "messages": [
             {"role": "user", "content": user_prompt}
         ]
@@ -125,9 +101,7 @@ def llm_restructure_pr_body(pr_body):
     
     response_dict = json.loads(response.text.strip())
     # Parse the result
-    result = response_dict['choices'][0]['message']['content']
-
-    return result
+    return response_dict['choices'][0]['message']['content']
 
 def pr_restructure(owner, repo, pr_number, token):
     pr_details = get_pull_request(owner, repo, pr_number, token)
@@ -143,6 +117,6 @@ def pr_restructure(owner, repo, pr_number, token):
         json.dump(json_content, json_file, indent=4)
 
 if __name__ == "__main__":
-    # pr_commits()
-    pr_restructure("veteran-2022", "rec_movies-master", 2, "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")
-    # pr_restructure("facebookresearch", "SONAR", 37, "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")
+    pr_commits()
+    # pr_restructure("veteran-2022", "rec_movies-master", 2, "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")
+    # pr_restructure("facebookresearch", "SONAR", 37, "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")

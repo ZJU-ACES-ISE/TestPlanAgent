@@ -1,40 +1,70 @@
-import base64
-import json
-import re
+import pickle
 import typing as t
-
 import requests
+import os
+import glob
+import os
+import fnmatch
+import json
+import sys
+from pathlib import Path
+from typing import List, Optional, Dict, Any, Union
 
-from composio import action
-from data_process.llm_process_3 import llm_restructure_pr_body, 
+import yaml
+sys.path.append(str(Path(__file__).resolve().parents[1]))  # 将父级目录加入执行目录列表
 
-DIFF_URL = "https://github.com/{owner}/{repo}/pull/{pull_number}.diff"
+from data_process.llm_process_3 import llm_restructure_pr_body
+
+
+
+# DIFF_URL = "https://github.com/{owner}/{repo}/pull/{pull_number}.diff"
+
+with open('./source/config.yaml', 'r') as f:
+    config = yaml.load(f, Loader=yaml.FullLoader)
+
+DIFF_URL = config['Agent']['diff_url']
 PR_URL = "https://api.github.com/repos/{owner}/{repo}/pulls/{pull_number}"
+
+token = "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"
+
+headers = {
+    'Authorization': f'token {token}',
+    'Accept': 'application/vnd.github.v3+json',
+}
 
 
 class DiffFormatter:
-    def __init__(self, diff_text):
+    def __init__(self, diff_text, current_file):
         self.diff_text = diff_text
         self.formatted_files = []
+        self.current_file = current_file
 
     def parse_and_format(self):
         """Parse the diff and return a structured format suitable for an AI review agent."""
-        current_file = None
+
         current_chunk = None
         lines = self.diff_text.split("\n")
 
+        current_file = {
+            "file_path": self.current_file,
+            "chunks": [],
+        }
+
+        if current_file:
+            self.formatted_files.append(current_file)
+ 
         for line in lines:
             # New file
-            if line.startswith("diff --git"):
-                if current_file:
-                    self.formatted_files.append(current_file)
-                current_file = {
-                    "file_path": self._extract_file_path(line),
-                    "chunks": [],
-                }
+            # if line.startswith("diff --git"):
+            #     if current_file:
+            #         self.formatted_files.append(current_file)
+            #     current_file = {
+            #         "file_path": self._extract_file_path(line),
+            #         "chunks": [],
+            #     }
 
             # File metadata (index, mode changes etc)
-            elif (
+            if (
                 line.startswith("index ")
                 or line.startswith("new file")
                 or line.startswith("deleted file")
@@ -148,265 +178,249 @@ class DiffFormatter:
         """Return the structured diff data for programmatic use."""
         return self.formatted_files
 
+def search_entity_in_project(entity_name: str) -> t.Dict:
 
-@action(toolname="github")
-def get_pr_diff(owner: str, repo: str, pull_number: str, thought: str) -> str:
     """
-    Get .diff data for a github PR.
+    Search for information about an entity (class or function) from the code knowledge graph. The entity information includes entity name, entity type, file to which it belongs, and number of lines in the file.
 
-    :param owner: Name of the owner of the repository.
-    :param repo: Name of the repository.
-    :param pull_number: Pull request number to retrive the diff for.
+    :param entity_name: The name of the entity (class or function) to be queried.
     :param thought: Thought to be used for the request.
 
-    :return diff: .diff content for give pull request.
+    :return entity_detail: The entity detail includes entity name, entity type, file to which it belongs, and number of lines in the file.
     """
-    diff_text = requests.get(
-        DIFF_URL.format(
-            owner=owner,
-            repo=repo,
-            pull_number=pull_number,
-        )
-    ).text
-    return DiffFormatter(diff_text).parse_and_format()
+    with open(f"{config['CKG']['graph_pkl_dir']}", 'rb') as f:
+        CKG = pickle.load(f)
+    
+    if entity_name in CKG:
+        # 获取节点的属性
+        node_attributes = CKG.nodes[entity_name]
+        node_attributes.pop('references')
+        # print(f"节点 {entity_name} 的属性：", node_attributes)
+        return json.dumps({"detail_of_entity": node_attributes})
 
+    return "cat not find the entity (class or function) in the project"
 
-@action(toolname="github")
-def get_pr_metadata(owner: str, repo: str, pull_number: str, thought: str) -> t.Dict:
+def search_code_dependencies(entity_name: str) -> t.Dict: 
     """
-    Get metadata for a github PR.
+    Searches for entities that points to an entity or to which an entity points.
 
-    :param owner: Name of the owner of the repository.
-    :param repo: Name of the repository.
-    :param pull_number: Pull request number to retrive the diff for.
+    :param entity_name: Entity name to search.
+    :param in_or_out: `in` means searching for other entities pointing to this entity, and `out` means searching for other entities pointed to by this entity.
     :param thought: Thought to be used for the request.
 
-    :return metadata: Metadata for give pull request.
+    :return neighbors: Neighbors of the entity.
     """
+    
+    with open(f"{config['CKG']['graph_pkl_dir']}", 'rb') as f:
+        CKG = pickle.load(f)
 
-    data = requests.get(
-        PR_URL.format(
-            owner=owner,
-            repo=repo,
-            pull_number=pull_number,
-        )
-    ).json()
+    neighbors = {}
+    if entity_name in CKG:
+        neighbors['entities_that_CALL_the_target_entity'] = list(CKG.predecessors(entity_name))
+        neighbors['entities_CALLED_by_the_target_entity'] = list(CKG.neighbors(entity_name))
+        return json.dumps(neighbors)
 
-    response = {
-        "title": data["title"],
-        "comments": data["comments"],
-        "commits": data["commits"],
-        "additions": data["additions"],
-        "deletions": data["deletions"],
-        "changed_files": data["changed_files"],
-        "head": {
-            "ref": data["head"]["ref"],
-            "sha": data["head"]["sha"],
-        },
-        "base": {
-            "ref": data["base"]["ref"],
-            "sha": data["base"]["sha"],
-        },
-    }
-    return response
+    return 'cat not find the entity in code knowledge graph'
 
-@action(toolname="github")
-def Parse_PR_and_Remove_Test_Plan(pr_nl_content: str, thought: str) -> t.Dict:
-    """
-    Parse PR and remove test plan
+def search_files_path_by_pattern(pattern):
+    cur_work_dir = os.getcwd()
 
-    :param pr_nl_content: PR Natural Language Content.
+    if not os.path.isabs(pattern):
+        pattern = os.path.join(cur_work_dir, '**', pattern)
+    
+    matched_pattern = glob.glob(pattern, recursive=True)
 
-    :return handled_pr: Handled_pr includes test plan and pr without test plan.
-    """
+    path_list = [{"path": file} for file in matched_pattern]
 
-    result = llm_restructure_pr_body(pr_nl_content)
+    return json.dumps(path_list)
 
-    handled_pr = {
-        "pr_without_test_plan": result["Description of changes"],
-        "test_plan": result["Test plan"],
-        "ori_pr" : pr_nl_content
-    }
-    return handled_pr
+def view_file_contents(file_path, index=0, start_line=None, end_line=None):
+    if os.path.isdir(file_path):
+        return "The provided path is a directory, not a file."
+    
+    try:
+        with open(file_path, 'r', encoding='utf-8') as file:
+            if start_line is not None and end_line is not None:
+                start_idx = max(0, start_line - 1)
+                all_lines = file.readlines()
+                end_idx = min(end_line, len(all_lines))
+                file_content = ''.join(all_lines[start_idx:end_idx])
+                return json.dumps({"file_content": file_content})
+            else:
+                lines_per_chunk = 100
+                start_idx = index * lines_per_chunk
+                all_lines = file.readlines()
+                end_idx = min(start_idx + lines_per_chunk, len(all_lines))
+                
+                if start_idx >= len(all_lines):
+                    return f"Index out of range. File has {len(all_lines)} lines."
+                file_content = ''.join(all_lines[start_idx:end_idx])
+                return json.dumps({"file_content": file_content})
+    except FileNotFoundError:
+        return f"File not found: {file_path}"
+    except PermissionError:
+        return f"Permission denied: {file_path}"
+    except UnicodeDecodeError:
+        return f"Unable to decode file: {file_path}. The file may be binary or use an unsupported encoding."
+    except Exception as e:
+        return f"An error occurred: {e}. A valid absolute file path is required."
 
-@action(toolname="github")
-def GITHUB_GET_Files(owner: str, repo: str, pull_number: str, thought: str) -> t.Dict:
-    """
-    Get the code files changed in pr.
+def view_code_changes(file_path):
+    diff_list = json.loads(requests.get(DIFF_URL).text)
+    for diff in diff_list:
+        if diff['filename'] == file_path:
+            patch = diff['patch']
+            formatted_patch = DiffFormatter(patch, file_path).parse_and_format()
+            return json.dumps({'code_changes': formatted_patch})
+    return 'File not found in diff list. A path relative to the repo root is required.'
 
-    :param owner: Name of the owner of the repository.
-    :param repo: Name of the repository.
-    :param pull_number: Pull request number to retrive the diff for.
-    :param thought: Thought to be used for the request.
-
-    :return pr_code_files: Pr_code_files contains code additions and deletions for all changed files.
-    """
-    token = "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"
-
-    headers = {
-        'Authorization': f'token {token}',
-        'Accept': 'application/vnd.github.v3+json',
-    }
-    pr_code_files = {}
-    # 获取完整代码及变更代码
-    files_url = f"https://api.github.com/repos/{owner}/{repo}/pulls/{pull_number}/files"
-    response = requests.get(files_url, headers=headers)
+def reformat_pr_info_for_user_prompt():
+    body = None
+    title = None
+    PR_url = config['Agent']['PR_url']
+    response = requests.get(PR_url, headers=headers)
     if response.status_code == 200:
         data = response.json()
-        for file in data:
-            if file['filename'].endswith('.py'):
-                full_code_url = file['contents_url']
-                if full_code_url:
-                    response = requests.get(full_code_url, headers=headers)
-                    file_content = response.json()['content']
-                    all_code = base64.b64decode(file_content).decode('utf-8')
-                    pr_code_files[file['filename']]["完整代码"] = all_code
-                    
-                if 'patch' in file:
-                    patch = file['patch']
-                    pr_code_files[file['filename']]["变更代码"] = patch
+        body = data['body']
+        title = data['title']
 
-    return pr_code_files
+    result = llm_restructure_pr_body(body).replace('```', '').replace('json','')
+    dict_result = json.loads(result)
+    dict_result["Description of changes"] = title + '\n' + dict_result["Description of changes"] 
 
-@action(toolname="github")
-def Code_Analysis_And_Get_Func(pr_code_files: str) -> t.Dict:
+    PR_Files_url = PR_url + '/files'
+    response = requests.get(PR_Files_url, headers=headers)
+
+    if response.status_code == 200:
+        PR_Changed_Files = response.json()
+        for file in PR_Changed_Files:
+            file.pop('sha', None)
+            file.pop('blob_url', None)
+            file.pop('raw_url', None)
+            file.pop('contents_url', None)
+            file.pop('patch', None)
+    tmp_dir = config['Judge']['tmp_dir']
+    os.makedirs(tmp_dir, exist_ok=True)
+    tmp_path = os.path.join(tmp_dir, "PR_body.json")
+    with open(f"{tmp_path}", 'w') as f:
+        json.dump(dict_result, f)
+
+    return {'PR_Content': dict_result["Description of changes"], 'PR_Changed_Files': PR_Changed_Files, 'Test_Plan': dict_result["Test plan"]}
+
+def explore_project_structure(
+    root_path: str, 
+    max_depth: int = 3, 
+    include_patterns: Optional[List[str]] = None, 
+    exclude_patterns: Optional[List[str]] = None,
+) -> str:
     """
-    Analysis code files and get the function level code.
-
-    :param pr_code_files: Pr_code_files contains code additions and deletions for all changed files.
-
-    :pr_function_level_code: Pr_function_level_code contains the additions and deletions of function-level code.
+    Explore and return the project file structure as either JSON or a formatted tree.
+    
+    Args:
+        root_path (str): The starting directory path to explore
+        max_depth (int, optional): Maximum depth of directories to display. Defaults to 3.
+        include_patterns (List[str], optional): List of patterns to include. Defaults to None.
+        exclude_patterns (List[str], optional): List of patterns to exclude. Defaults to None.
+    
+    Returns:
+        str: Project structure in the requested format or error message
     """
-
-    # 序列化pr_code_files
-    dict_pr_code_files = json.loads(pr_code_files)
+    if not os.path.exists(root_path):
+        return f"Error: Path '{root_path}' does not exist."
     
-    # 获取函数级代码
-    pr_function_level_code = {}
-
-    for file_name in dict_pr_code_files:
-        if '变更代码' in dict_pr_code_files[file_name]:
-            patch = dict_pr_code_files[file_name]['变更代码']
-            function_level_code = extract_function_code_from_patch(patch)
-            pr_function_level_code[file_name] = function_level_code
-
-    return pr_function_level_code
-
-@action(toolname="github")
-def Change_Type_Classification(pr_nl_content: str, pr_function_level_code: str) -> t.Dict:
-    """
-    Code change type determination: application function/basic function.
-
-    :param pr_nl_content: PR Natural Language Content.
-    :param pr_function_level_code: Pr_function_level_code contains the additions and deletions of function-level code.
-
-    :return change_type: Change type of the PR.
-    """
-
-    prompt = f"""
-    Based on the following pull request (PR) details, determine the type of change. 
-    Classify the change as either "application function" or "basic function" based on the context provided.
+    if not os.path.isdir(root_path):
+        return f"Error: Path '{root_path}' is not a directory."
     
-    PR Description: {pr_nl_content}
+    if include_patterns is None:
+        include_patterns = ["*"]  
     
-    PR Code Change: {pr_function_level_code}
+    if exclude_patterns is None:
+        exclude_patterns = []  
     
-    The classification should be in the format {{'change_type': 'application function' or 'basic function'}}.
-    """
-
-    # api_key = os.environ.get("OPENAI_API_KEY")
-    api_key = "sk-bdb2caae8edf4fc1a809919a192074b3"
-    # url = "https://api.gptsapi.net/v1/chat/completions"  # 自定义的base URL
-    url = "https://api.deepseek.com/v1/chat/completions"  # 自定义的base URL
-
-    # 定义请求体
-    data = {
-        "model": "deepseek-chat",  
-        "messages": [
-            {"role": "user", "content": prompt}
-        ]
-    }
-
-    # 设置头部
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json"
-    }
-
-    # 发起请求
-    response = requests.post(url, json=data, headers=headers)
-    
-    response_dict = json.loads(response.text.strip())
-    
-    change_type = {"change_type": response_dict['choices'][0]['message']['content']}
-
-    return change_type
-
-@action(toolname="github")
-def Change_Impact_Scope_Determination(pr_function_level_code: str) -> str:
-    """
-    Change impact scope determination.
-
-    :param pr_function_level_code: Pr_function_level_code contains the additions and deletions of function-level code.
-
-    :return recently_affected_function: Recently affected function.
-    """
-    dict_pr_function_level_code = json.loads(pr_function_level_code)
-    
-    affected_functions_list = []
-
-    for file_name in dict_pr_function_level_code:
-        for function_name in dict_pr_function_level_code[file_name]:
-            affected_functions_list.append(function_name)
-    # 有项（无环）图 多节点最近祖先求解
-
-    return "function"
-
-@action(toolname="github")
-def Test_Plan_Generator() -> str:
-    """
-    Test plan generator.
-
-    :return test_plan : .
-    """
-    return 1
-
-
-def extract_function_code_from_patch(patch):
-    """
-    从Git diff的patch字符串中提取每个函数的代码段。
-    :param patch: Git diff字符串
-    :return: 一个字典，包含每个函数的代码段
-    """
-    # 正则表达式，用来匹配Python函数定义
-    function_pattern = re.compile(r"def\s+(\w+)\s*\(.*\)\s*:", re.M)
-    
-    # 解析patch内容并提取出增改的代码行
-    lines = patch.splitlines()
-    
-    # 用来存储最终结果
-    function_code = {}
-    
-    current_function = None
-    current_code = []
-    
-    for line in lines:
-        # 如果是函数定义，开始提取代码
-        function_match = function_pattern.match(line)
-        if function_match:
-            # 如果已经有函数正在收集代码，则存储它
-            if current_function:
-                function_code[current_function] = "\n".join(current_code)
+    def should_include(path: str) -> bool:
+        """Determine if a path should be included based on patterns."""
+        filename = os.path.basename(path)
+        
+        for pattern in exclude_patterns:
+            if os.path.sep in pattern: 
+                if fnmatch.fnmatch(path, pattern):
+                    return False
+            if fnmatch.fnmatch(filename, pattern):
+                return False
             
-            # 更新当前函数的名称，并开始收集代码
-            current_function = function_match.group(1)
-            current_code = [line]  # 将当前的函数定义行作为代码的一部分
-        elif current_function:
-            # 如果已经在收集函数代码，并且这行是函数内部的代码，继续添加到当前代码中
-            current_code.append(line)
+        if os.path.isdir(path) and not any(os.path.sep in p for p in include_patterns):
+            return True
+            
+        for pattern in include_patterns:
+            if os.path.sep in pattern:  
+                if fnmatch.fnmatch(path, pattern):
+                    return True
+            elif fnmatch.fnmatch(filename, pattern):
+                return True
+                
+        return False
     
-    # 最后存储最后一个函数的代码
-    if current_function:
-        function_code[current_function] = "\n".join(current_code)
-    
-    return function_code
+    # Generate JSON format structure
+    def generate_json_structure() -> str:
+        """Generate directory structure in JSON format."""
+        def build_structure(dir_path: str, current_depth: int = 0) -> Dict[str, Any]:
+            """Recursively build a dictionary representing the directory structure."""
+            name = os.path.basename(dir_path)
+            result = {
+                "name": name if name else dir_path,  # Handle root directory
+                "type": "directory",
+                "path": dir_path,
+                "children": []
+            }
+            
+            if current_depth > max_depth:
+                result["note"] = "max depth reached"
+                return result
+                
+            try:
+                entries = os.listdir(dir_path)
+                
+                # Sort entries: directories first, then files
+                dirs = [e for e in entries if os.path.isdir(os.path.join(dir_path, e)) 
+                        and should_include(os.path.join(dir_path, e))]
+                files = [e for e in entries if os.path.isfile(os.path.join(dir_path, e)) 
+                         and should_include(os.path.join(dir_path, e))]
+                
+                dirs.sort()
+                files.sort()
+                
+                # Process directories
+                for d in dirs:
+                    path = os.path.join(dir_path, d)
+                    child = build_structure(path, current_depth + 1)
+                    result["children"].append(child)
+                
+                # Process files
+                for f in files:
+                    path = os.path.join(dir_path, f)
+                    file_info = {
+                        "name": f,
+                        "type": "file",
+                        "path": path
+                    }
+                    result["children"].append(file_info)
+                    
+            except PermissionError:
+                result["error"] = "Permission denied"
+            except Exception as e:
+                result["error"] = str(e)
+                
+            return result
+            
+        # Build the structure starting from root_path
+        structure = build_structure(root_path)
+        return json.dumps(structure, indent=2)
+
+    return generate_json_structure()
+
+def main():
+    root_path = "/home/veteran/projects/multiAgent/TestPlanAgent/test_projects/opentrons/README.md"
+    print()
+
+if __name__ == '__main__':
+    main()

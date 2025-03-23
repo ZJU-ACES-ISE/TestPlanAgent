@@ -13,7 +13,9 @@ def read_user_input(
     # while True:
         # value = input(f"{prompt} > ")
     # value = "https://github.com/ComposioHQ/composio/pull/1084"
-    value = "https://github.com/veteran-2022/rec_movies-master/pull/2"
+    # value = "https://github.com/veteran-2022/rec_movies-master/pull/2"
+    # value = "https://github.com/wandb/wandb/pull/6432"
+    value = "https://github.com/getsentry/snuba/pull/3353"
     try:
         return validator(value)
     except Exception as e:

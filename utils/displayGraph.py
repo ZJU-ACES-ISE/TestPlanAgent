@@ -1,5 +1,5 @@
 
-from agent.agent import get_graph_testplan_1
+from agent.multi_agent import get_graph_testplan_1
 from utils.inputs import from_github
 
 def main() -> None:
