@@ -62,16 +62,41 @@
         "a,https://github.com/Opentrons/opentrons/pull/15604",
         "f,https://github.com/Opentrons/opentrons/pull/16189",
         "a,https://github.com/Opentrons/opentrons/pull/13630",
-        "a,https://github.com/Opentrons/opentrons/pull/13818"
+        "a,https://github.com/Opentrons/opentrons/pull/13818",
+        "a & U,good,https://github.com/Opentrons/opentrons/pull/16571",
+        "a & U,https://github.com/Opentrons/opentrons/pull/16555",
+        "a & U,https://github.com/Opentrons/opentrons/pull/13853",
+        "a & U,https://github.com/Opentrons/opentrons/pull/13910",
+        "a & U,https://github.com/Opentrons/opentrons/pull/13965",
+        "a & U,https://github.com/Opentrons/opentrons/pull/13589",
+        "a & U,https://github.com/Opentrons/opentrons/pull/14601",
+        "a & U,https://github.com/Opentrons/opentrons/pull/13859",
+        "a & U,https://github.com/Opentrons/opentrons/pull/16612",
+        "a & U,https://github.com/Opentrons/opentrons/pull/14448",
+        "a & U,https://github.com/Opentrons/opentrons/pull/16418",
+        "a & U,https://github.com/Opentrons/opentrons/pull/15725",
+        "a & U,https://github.com/Opentrons/opentrons/pull/14848",
+        "bad,https://github.com/Opentrons/opentrons/pull/16302",
+        "bad,https://github.com/Opentrons/opentrons/pull/13608",
+        "bad,https://github.com/Opentrons/opentrons/pull/15823"
     ],
-    "getsentry": [
-        "f,https://github.com/getsentry/snuba/pull/3353",
-        "f,https://github.com/getsentry/sentry/pull/39170",
-        "a,https://github.com/getsentry/sentry/pull/20310",
-        "f,https://github.com/getsentry/sentry/pull/41726",
+    "snuba": [
         "f,https://github.com/getsentry/snuba/pull/2256",
         "a,https://github.com/getsentry/snuba/pull/3545",
-        "f,https://github.com/getsentry/snuba/pull/3405"
+        "f,https://github.com/getsentry/snuba/pull/3353",
+        "f,https://github.com/getsentry/snuba/pull/3405",
+        "bad,https://github.com/getsentry/snuba/pull/2988"
+    ],
+    "sentry": [
+        "f,https://github.com/getsentry/sentry/pull/39170",
+        "f,https://github.com/getsentry/sentry/pull/41726",
+        "a,https://github.com/getsentry/sentry/pull/20310",
+        "a & U,https://github.com/getsentry/sentry/pull/41848",
+        "a & U,https://github.com/getsentry/sentry/pull/34493",
+        "a & U,https://github.com/getsentry/sentry/pull/50882",
+        "a & U,https://github.com/getsentry/sentry/pull/17906",
+        "bad,https://github.com/getsentry/sentry/pull/18848",
+        "bad,https://github.com/getsentry/sentry/pull/20182"
     ],
     "pypa": [
         "a,https://github.com/pypa/pipx/pull/900",
@@ -86,7 +111,8 @@
     "securedrop": [
         "a,https://github.com/freedomofpress/securedrop/pull/6557",
         "a,https://github.com/freedomofpress/securedrop/pull/6406",
-        "a,https://github.com/freedomofpress/securedrop/pull/7175"
+        "a,https://github.com/freedomofpress/securedrop/pull/7175",
+        "bad,https://github.com/freedomofpress/securedrop/pull/6785"
     ],
     "securedrop-client": [
         "a,https://github.com/freedomofpress/securedrop-client/pull/1883",
@@ -95,6 +121,7 @@
     ],
     "optimizely": [
         "f,https://github.com/optimizely/python-sdk/pull/414",
-        "f,https://github.com/optimizely/python-sdk/pull/271"
+        "f,https://github.com/optimizely/python-sdk/pull/271",
+        "bad,https://github.com/optimizely/python-sdk/pull/405"
     ]
 }
