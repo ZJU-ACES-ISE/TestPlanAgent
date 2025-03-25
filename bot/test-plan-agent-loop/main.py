@@ -3,15 +3,19 @@ import time
 import json
 import re
 import os
+
 import sys
 from pathlib import Path
+
+import yaml
+sys.path.append(str(Path(__file__).resolve().parents[2]))  # 将父级目录加入执行目录列表
+
 from make_run_config_file import generate_config, save_config
 from agent.test_plan_agent_v1_1 import agent
-sys.path.append(str(Path(__file__).resolve().parents[1]))  # 将父级目录加入执行目录列表
 
 # GitHub API配置
 GITHUB_TOKEN = "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"
-POLLING_INTERVAL = 7  # 秒
+POLLING_INTERVAL = 5  # 秒
 HEADERS = {
     "Authorization": f"token {GITHUB_TOKEN}",
     "Accept": "application/vnd.github+json",
@@ -19,8 +23,8 @@ HEADERS = {
 }
 
 output_file_name  = ""
-model = "gpt-4o"
-api = "https://api.gptsapi.net/v1/chat/completions"
+llm_model = "gpt-4o"
+llm_api = "https://api.gptsapi.net/v1/chat/completions"
 output = "./source/config.yaml"
 output_dir = None
 
@@ -85,9 +89,10 @@ def get_pr_url_from_notification(notification):
 
 def create_test_plan(pr_url):
     # 调用测试计划API
-    config = generate_config(pr_url, output_file_name, model, output_dir)
-    save_config(config, output_dir)
-    test_plan = agent()
+    config = generate_config(pr_url, output_file_name, llm_model, llm_api, output_dir)
+    save_config(config, output)
+
+    test_plan = agent(output)
     
     if test_plan != "":
         return test_plan
@@ -155,7 +160,7 @@ def main():
                         continue
                     
                     # 发表评论
-                    comment = f"# Test Plan\n\n{test_plan}\n\n*自动生成的测试计划*"
+                    comment = f"# Test Plan\n\n{test_plan}\n\n*By Test-Plan-Bot*"
                     success = post_comment_to_pr(pr_url, comment)
                     
                     if success:

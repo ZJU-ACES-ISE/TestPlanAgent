@@ -9,18 +9,15 @@ import os
 import requests
 import json
 from prompt.test_plan_agent_prompt_v4_5 import PR_TEST_PLAN_EDIT_USER_PROMPT, PR_TEST_PLAN_EDIT_SYSTEM_PROMPT
-from utils.tools import explore_project_structure, search_code_dependencies, search_entity_in_project, search_files_path_by_pattern, view_code_changes, view_file_contents
+from utils.tools import Agent_utils
 from datetime import datetime
-from utils.tools import reformat_pr_info_for_user_prompt
 
-with open('./source/config.yaml', 'r') as f:
-    config = yaml.load(f, Loader=yaml.FullLoader)
 
-reformat_pr_info = reformat_pr_info_for_user_prompt()
-PR_Content = reformat_pr_info['PR_Content'] 
-PR_Changed_Files = reformat_pr_info['PR_Changed_Files']
 
-def llm(system_prompt, user_prompt):
+
+def llm(config, system_prompt, user_prompt):
+    # with open('./source/config.yaml', 'r') as f:
+    #     config = yaml.load(f, Loader=yaml.FullLoader)
 
     api_key = os.environ.get("OPENAI_API_KEY")
     # api_key = "sk-Y9Ba7ca3cb6235a6b6f2d371c3bc11db13f0a1e8bf9a4p5o"
@@ -53,39 +50,47 @@ def llm(system_prompt, user_prompt):
     content = response_dict['choices'][0]['message']['content']
     return content
 
-def execute_tool(tool_name, tool_param):
+def execute_tool(agent_utils, tool_name, tool_param):
+    
     observation = ''
     if tool_name == 'search_class_in_project' or tool_name == 'search_function_in_project':
         entity_type = tool_name.split('_')[1]
-        observation = search_entity_in_project(tool_param[f"{entity_type}_name"])
+        observation = agent_utils.search_entity_in_project(tool_param[f"{entity_type}_name"])
 
     elif tool_name == 'search_code_dependencies':
-        observation = search_code_dependencies(tool_param['entity_name'])
+        observation = agent_utils.search_code_dependencies(tool_param['entity_name'])
 
     elif tool_name == 'search_files_path_by_pattern':
-        observation = search_files_path_by_pattern(tool_param['pattern'])
+        observation = agent_utils.search_files_path_by_pattern(tool_param['pattern'])
 
     elif tool_name == 'view_file_contents':
         file_path = tool_param.get('file_path')
         index = tool_param.get('index', 0)
         start_line = tool_name.get('start_line', None)
         end_line = tool_name.get('end_line', None)
-        observation = view_file_contents(file_path, index, start_line, end_line)
+        observation = agent_utils.view_file_contents(file_path, index, start_line, end_line)
 
     elif tool_name == 'view_code_changes':
-        observation = view_code_changes(tool_param['file_path'])
+        observation = agent_utils.view_code_changes(tool_param['file_path'])
     
     elif tool_name == 'explore_project_structure':
-        root_path = tool_param.get("root_path", "/")        
+        root_path = tool_param.get("root_path", "/")
         max_depth = tool_param.get("max_depth", 3)
         include_patterns = tool_param.get("include_patterns", None)
         exclude_patterns = tool_param.get("exclude_patterns", None)
-        observation = explore_project_structure(root_path, max_depth, include_patterns, exclude_patterns)
+        observation = agent_utils.explore_project_structure(root_path, max_depth, include_patterns, exclude_patterns)
 
     observation = json.dumps(observation)
     return observation
 
-def agent():
+def agent(config_path):
+    with open(config_path, 'r') as f:
+        config = yaml.load(f, Loader=yaml.FullLoader)
+    agent_utils = Agent_utils(config)
+    reformat_pr_info = agent_utils.reformat_pr_info_for_user_prompt()
+    PR_Content = reformat_pr_info['PR_Content'] 
+    PR_Changed_Files = reformat_pr_info['PR_Changed_Files']
+
     user_prompt = PR_TEST_PLAN_EDIT_USER_PROMPT.format(
         PR_Project_Root_Dir=config['CKG']['project_dir'],
         PR_Content=PR_Content,
@@ -94,7 +99,7 @@ def agent():
     test_plan = ""
     for i in range(1, 20):
         session_message = ''
-        content = llm(PR_TEST_PLAN_EDIT_SYSTEM_PROMPT, user_prompt)
+        content = llm(config, PR_TEST_PLAN_EDIT_SYSTEM_PROMPT, user_prompt)
         if 'Test Plan Details' in content:
             thought_content = ''.join(content.split('Thought')[1].split('Test Plan Details')[0].split(':')[1:]).replace('#', '').strip()
             print('Test Plan completed!')
@@ -112,7 +117,7 @@ def agent():
             print(content + '\n')
             print(f"Thought {i}: " + thought_content + '\n' + f"Action {i}: " + action_name + '\n' + json.dumps(action_param) +'\n')
             break
-        observation = execute_tool(action_name, action_param)
+        observation = execute_tool(agent_utils, action_name, action_param)
         session_message = f"Thought {i}: " + thought_content + '\n' + f"Action {i}: " + action_name + '\n' + json.dumps(action_param) + '\n' + f"Observation {i}: " + observation + '\n'
         user_prompt += session_message
         print(f"Round {i}\n")
@@ -129,7 +134,7 @@ def agent():
 
     return test_plan
 def main():
-    agent()
+    agent('./source/config.yaml')
 
 if __name__ == "__main__":
     main()
