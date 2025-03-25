@@ -22,3 +22,5 @@ texts = [
 
 for text, sentiment in zip(texts, predict_sentiment(texts)):
     print(f"Text: {text}\nSentiment: {sentiment}\n")
+
+test = "1"
