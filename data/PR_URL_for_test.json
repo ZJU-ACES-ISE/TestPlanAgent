@@ -78,7 +78,7 @@
         "a & U,https://github.com/Opentrons/opentrons/pull/14848",
         "bad,https://github.com/Opentrons/opentrons/pull/16302",
         "bad,https://github.com/Opentrons/opentrons/pull/13608",
-        "bad,https://github.com/Opentrons/opentrons/pull/15823"
+        "bad,https://github.com/Opentrons/opentrons/pull/15823",
     ],
     "snuba": [
         "f,https://github.com/getsentry/snuba/pull/2256",
