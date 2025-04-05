@@ -13,7 +13,7 @@ from typing import List, Optional, Dict, Any, Union
 import yaml
 sys.path.append(str(Path(__file__).resolve().parents[1]))  # 将父级目录加入执行目录列表
 
-from data_process.llm_process_3 import llm_restructure_pr_body
+from data_process.PR.llm_process_3 import llm_restructure_pr_body
 # DIFF_URL = "https://github.com/{owner}/{repo}/pull/{pull_number}.diff"
 
 class Agent_utils:
@@ -184,17 +184,26 @@ class Agent_utils:
 
         :return entity_detail: The entity detail includes entity name, entity type, file to which it belongs, and number of lines in the file.
         """
-        with open(f"{self.config['CKG']['graph_pkl_dir']}", 'rb') as f:
-            CKG = pickle.load(f)
-        
-        if entity_name in CKG:
-            # 获取节点的属性
-            node_attributes = CKG.nodes[entity_name]
-            node_attributes.pop('references')
-            # print(f"节点 {entity_name} 的属性：", node_attributes)
-            return json.dumps({"detail_of_entity": node_attributes})
+        try:
+            with open(f"{self.config['CKG']['graph_pkl_dir']}", 'rb') as f:
+                CKG = pickle.load(f)
+            
+            if entity_name in CKG:
+                # 获取节点的属性
+                node_attributes = CKG.nodes[entity_name]
+                node_attributes.pop('references')
+                # print(f"节点 {entity_name} 的属性：", node_attributes)
+                return json.dumps({"detail_of_entity": node_attributes})
 
-        return "cat not find the entity (class or function) in the project"
+            return "cat not find the entity (class or function) in the project"
+        except FileNotFoundError:
+            return json.dumps({"error": "Code knowledge graph file not found"})
+        except pickle.PickleError:
+            return json.dumps({"error": "Failed to load code knowledge graph"})
+        except KeyError:
+            return json.dumps({"error": f"Entity '{entity_name}' exists but has invalid structure"})
+        except Exception as e:
+            return json.dumps({"error": f"An unexpected error occurred while searching entity: {str(e)}"})
 
     def search_code_dependencies(self, entity_name: str) -> t.Dict: 
         """
@@ -206,29 +215,38 @@ class Agent_utils:
 
         :return neighbors: Neighbors of the entity.
         """
-        
-        with open(f"{self.config['CKG']['graph_pkl_dir']}", 'rb') as f:
-            CKG = pickle.load(f)
+        try:
+            with open(f"{self.config['CKG']['graph_pkl_dir']}", 'rb') as f:
+                CKG = pickle.load(f)
 
-        neighbors = {}
-        if entity_name in CKG:
-            neighbors['entities_that_CALL_the_target_entity'] = list(CKG.predecessors(entity_name))
-            neighbors['entities_CALLED_by_the_target_entity'] = list(CKG.neighbors(entity_name))
-            return json.dumps(neighbors)
+            neighbors = {}
+            if entity_name in CKG:
+                neighbors['entities_that_CALL_the_target_entity'] = list(CKG.predecessors(entity_name))
+                neighbors['entities_CALLED_by_the_target_entity'] = list(CKG.neighbors(entity_name))
+                return json.dumps(neighbors)
 
-        return 'cat not find the entity in code knowledge graph'
+            return 'cat not find the entity in code knowledge graph'
+        except FileNotFoundError:
+            return json.dumps({"error": "Code knowledge graph file not found"})
+        except pickle.PickleError:
+            return json.dumps({"error": "Failed to load code knowledge graph"})
+        except Exception as e:
+            return json.dumps({"error": f"An unexpected error occurred while searching dependencies: {str(e)}"})
 
     def search_files_path_by_pattern(self, pattern):
-        cur_work_dir = os.getcwd()
+        try:
+            cur_work_dir = os.getcwd()
 
-        if not os.path.isabs(pattern):
-            pattern = os.path.join(cur_work_dir, '**', pattern)
-        
-        matched_pattern = glob.glob(pattern, recursive=True)
+            if not os.path.isabs(pattern):
+                pattern = os.path.join(cur_work_dir, '**', pattern)
+            
+            matched_pattern = glob.glob(pattern, recursive=True)
 
-        path_list = [{"path": file} for file in matched_pattern]
+            path_list = [{"path": file} for file in matched_pattern]
 
-        return json.dumps(path_list)
+            return json.dumps(path_list)
+        except Exception as e:
+            return json.dumps({"error": f"An error occurred while searching files: {str(e)}"})
 
     def view_file_contents(self, file_path, index=0, start_line=None, end_line=None):
         if os.path.isdir(file_path):
@@ -262,13 +280,22 @@ class Agent_utils:
             return f"An error occurred: {e}. A valid absolute file path is required."
 
     def view_code_changes(self, file_path):
-        diff_list = json.loads(requests.get(self.DIFF_URL).text)
-        for diff in diff_list:
-            if diff['filename'] == file_path:
-                patch = diff['patch']
-                formatted_patch = self.DiffFormatter(patch, file_path).parse_and_format()
-                return json.dumps({'code_changes': formatted_patch})
-        return 'File not found in diff list. A path relative to the repo root is required.'
+        try:
+            diff_list = json.loads(requests.get(self.DIFF_URL).text)
+            for diff in diff_list:
+                if diff['filename'] == file_path:
+                    patch = diff['patch']
+                    formatted_patch = self.DiffFormatter(patch, file_path).parse_and_format()
+                    return json.dumps({'code_changes': formatted_patch})
+            return 'File not found in diff list. A path relative to the repo root is required.'
+        except requests.RequestException as e:
+            return json.dumps({"error": f"Failed to retrieve diff information: {str(e)}"})
+        except json.JSONDecodeError:
+            return json.dumps({"error": "Invalid JSON response from diff URL"})
+        except KeyError as e:
+            return json.dumps({"error": f"Missing key in diff data: {str(e)}"})
+        except Exception as e:
+            return json.dumps({"error": f"An unexpected error occurred while viewing code changes: {str(e)}"})
 
     def reformat_pr_info_for_user_prompt(self):
         body = None
@@ -279,7 +306,7 @@ class Agent_utils:
             data = response.json()
             body = data['body']
             title = data['title']
-
+        body = body.replace("\r\n", "\\n").replace('\"', '\\"').replace("'", "\'")
         result = llm_restructure_pr_body(body).replace('```', '').replace('json','')
         dict_result = json.loads(result)
         dict_result["Description of changes"] = title + '\n' + dict_result["Description of changes"] 

@@ -64,8 +64,40 @@ import requests
 # parsed_json = json.loads(res)
 # print(parsed_json)
 
-url = "https://api.github.com/repos/getsentry/snuba/pulls/653/files"
+# url = "https://api.github.com/repos/getsentry/snuba/pulls/653/files"
 
-response = requests.get(url)
+# response = requests.get(url)
 
-print(response.text)
+# print(response.text)
+
+import requests
+
+
+response = requests.post(
+    "http://localhost:5000/predict",
+    json={"texts": ["I love this product!", 
+         "The company's quarterly results are terrible."]}
+)
+print(response.json())
+
+# with open("data/sentiment_intent/pre_processed_contraction_pr_full_comments_sentiment_gpt-4o-mini_threaded_3.json", "r") as f:
+#     intent_data = json.load(f)
+
+# with open("data/PR/PR_URL_for_test.json") as f:
+#     ori_data = json.load(f)
+
+# for project in intent_data:
+#     for pr_num in intent_data[project]:
+#         pr_content = intent_data[project][pr_num]["PR_content"]
+#         comments = intent_data[project][pr_num]["comments"]
+#         flag = False
+#         for comment in comments:
+#             if comment["content"] == 5:
+#                 flag = True
+#                 break
+#         if flag:
+#             for pr_url in ori_data[project]:
+#                 if pr_num in pr_url:
+#                     ori_data[project].remove(pr_url)
+# with open("data/PR/PR_URL_for_test_true.json", "w") as f:
+#     json.dump(ori_data, f)

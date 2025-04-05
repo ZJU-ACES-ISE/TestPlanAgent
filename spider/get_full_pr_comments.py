@@ -4,10 +4,10 @@ import json
 import time
 from tqdm import tqdm  # 用于进度条
 
-with open('data/PR_URL_for_test.json', 'r') as f:
+with open('data/PR/PR_URL_for_test.json', 'r') as f:
     data = json.load(f)
 
-def get_body_from_pr(url, max_retries=3):
+def get_body_from_pr(url, max_retries=5):
     # token = os.environ.get('GITHUB_ACCESS_TOKEN')
     token = "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"
 
@@ -68,14 +68,15 @@ for project in tqdm(data, desc="Processing projects"):
 
         issue_comments_api_url = f"https://api.github.com/repos/{repo}/{user}/issues/{pull_number}/comments"
         review_comments_api_url = f"https://api.github.com/repos/{repo}/{user}/pulls/{pull_number}/comments"
-
+        review_api_url = f"https://api.github.com/repos/{repo}/{user}/pulls/{pull_number}/reviews"
+        
         issue_comments = get_body_from_pr(issue_comments_api_url)
         review_comments = get_body_from_pr(review_comments_api_url)
-
-        comments = issue_comments + review_comments
+        reviews = get_body_from_pr(review_api_url)
+        comments = issue_comments + review_comments + reviews
         
         project_total_comments[pull_number] = comments
     total_comments[project] = project_total_comments
 
-with open('data/pr_full_comments.json', 'w') as f:
+with open('data/pr_full_comments_add_reviews.json', 'w') as f:
     json.dump(total_comments, f)
