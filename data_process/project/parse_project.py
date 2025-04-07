@@ -156,8 +156,8 @@ def save_results_to_json(results, output_file):
 
 # 使用示例
 if __name__ == "__main__":
-    project_dir = "/home/veteran/projects/multiAgent/TestPlanAgent/test_projects/opentrons"
-    output_file = "/home/veteran/projects/multiAgent/TestPlanAgent/data_process/project/opentrons_code_structure.json"
+    project_dir = "/data/veteran/project/TestPlanAgent/test_project/opentrons"
+    output_file = "/data/veteran/project/TestPlanAgent/data_process/project/opentrons_code_structure.json"
     
     results = analyze_code_files(project_dir)
     save_results_to_json(results, output_file)

@@ -79,7 +79,7 @@ class CodeSimilaritySearch:
         process_structure(code_structure)
         print(f"Found {len(self.code_info)} code blocks.")
     
-    def compute_code_embeddings(self, batch_size=16):
+    def compute_code_embeddings(self, batch_size=512):
         """为所有代码块计算嵌入向量"""
         print("Computing embeddings for all code blocks...")
         
@@ -151,7 +151,7 @@ class CodeSimilaritySearch:
 
 def main():
     parser = argparse.ArgumentParser(description="Find code similar to PR description using CodeT5+")
-    parser.add_argument("--json_file", type=str, required=True, help="Path to the JSON file with code structure")
+    # parser.add_argument("--json_file", type=str, required=True, help="Path to the JSON file with code structure")
     # parser.add_argument("--pr_description", type=str, required=True, help="PR description or path to a text file with PR description")
     parser.add_argument("--output", type=str, default="similar_code_results.json", help="Path to output JSON file")
     parser.add_argument("--top_k", type=int, default=25, help="Number of most similar code blocks to return")
@@ -161,8 +161,10 @@ def main():
     # 初始化代码相似度搜索
     searcher = CodeSimilaritySearch()
     
+
+    json_file = "/data/veteran/project/TestPlanAgent/data_process/project/opentrons_code_structure.json"
     # 加载代码
-    searcher.load_code_from_json(args.json_file)
+    searcher.load_code_from_json(json_file)
     
     # 计算所有代码的嵌入
     searcher.compute_code_embeddings()
@@ -172,7 +174,7 @@ def main():
     #     with open(args.pr_description, 'r', encoding='utf-8') as f:
     #         pr_description = f.read()
     # else:
-    pr_description = ""
+    pr_description = "feat(protocol-designer): add step names to protocol steps and disable overflow menu buttons\n# Overview\n\nThis PR addresses two major tasks: 1) adding the step name above deck map in ProtocolSteps component, and 2) appropriately disabling buttons from step overflow menus when appropriate. Namely, when a step is in editing, its overflow menu should not permit viewing details (for transfer and thermocycler profile steps). When a step form has unsaved changes, its overflow menu should not permit duplication. If batch edit is open, neither steps's overflow menu should permit batch duplication. Deletion is available in any scenario. Also, the opening of a step form edit toolbox takes priority over step details toolbox.\n\nIn addition, I pass the `zIndex` prop for `Toolbox` only if it is of position fixed. \n\nCloses AUTH-878, Closes AUTH-880\n\n## Changelog\n\n- add step names\n- update logic for disabling overflow menu items\n- add tests\n- fix small styling throughout ProtocolSteps sub components\n\n## Review requests\n\nsee test plan\n\n## Risk assessment\n\nlow"
     
     # 查找相似代码
     results = searcher.find_similar_code(pr_description, args.top_k)

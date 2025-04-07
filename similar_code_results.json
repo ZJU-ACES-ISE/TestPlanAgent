@@ -1,0 +1,202 @@
+[
+  {
+    "path": "robot-server/robot_server/runs/run_models.py",
+    "file": "run_models.py",
+    "name": "RunCurrentState",
+    "type": "class",
+    "code": "class RunCurrentState(BaseModel):\n    \"\"\"Current details about a run.\"\"\"\n\n    # todo(mm, 2024-11-15): Having estopEngaged here is a bit of an odd man out because\n    # it's sensor state that can change on its own at any time, whereas the rest of\n    # these fields are logical state that changes only when commands are run.\n    #\n    # Our current mechanism for anchoring these fields to a specific point in time\n    # (important for avoiding torn-read problems when a client combines this info with\n    # info from other endpoints) is `links.currentCommand`, which is based on the idea\n    # that these fields only change when the current command changes.\n    #\n    # We should see if clients can replace this with `GET /robot/control/estopStatus`.\n    estopEngaged: bool\n\n    activeNozzleLayouts: Dict[str, ActiveNozzleLayout]\n    tipStates: Dict[str, TipState]\n    placeLabwareState: Optional[PlaceLabwareState]",
+    "similarity_score": 0.897933840751648
+  },
+  {
+    "path": "api/src/opentrons/protocol_api/disposal_locations.py",
+    "file": "disposal_locations.py",
+    "name": "area_name",
+    "type": "function",
+    "code": "def area_name(self) -> str:\n        \"\"\"Addressable area name of the waste chute.\n\n        :meta private:\n\n        This is intended for Opentrons internal use only and is not a guaranteed API.\n        \"\"\"\n        # TODO(jbl 2024-02-06) this is hardcoded here and should be removed when a multiple pass analysis exists\n        #\n        # We want to tell Protocol Engine that there's a waste chute in the waste chute location when it's loaded,\n        # so analysis can prevent the user from doing anything that would collide with it. At the same time, we\n        # do not want to create a false negative when it comes to addressable area conflict. We therefore use the\n        # addressable area `1ChannelWasteChute` because every waste chute cutout fixture provides it and it will\n        # provide the engine with the information it needs.\n        return \"1ChannelWasteChute\"",
+    "similarity_score": 0.880534291267395
+  },
+  {
+    "path": "api/src/opentrons/simulate.py",
+    "file": "simulate.py",
+    "name": "_get_bundle_args",
+    "type": "function",
+    "code": "def _get_bundle_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:\n    parser.add_argument(\n        \"-b\",\n        \"--bundle\",\n        nargs=\"?\",\n        const=\"PROTOCOL.ot2.zip\",\n        default=None,\n        action=\"store\",\n        type=str,\n        help=\"Bundle the specified protocol file, any labware used in it, and \"\n        \"any files in the data directories specified with -D into a \"\n        \"bundle. This bundle can be executed on a robot and carries with \"\n        \"it all the custom labware and data required to run. Without a \"\n        \"value specified in this argument, the bundle will be called \"\n        \"(protocol name without the .py).ot2.zip, but you can specify \"\n        \"a different output name. \\n\"\n        \"These bundles are a beta feature, and their behavior may change\",\n    )\n    return parser",
+    "similarity_score": 0.8775899410247803
+  },
+  {
+    "path": "robot-server/robot_server/protocols/protocol_models.py",
+    "file": "protocol_models.py",
+    "name": "Metadata",
+    "type": "class",
+    "code": "class Metadata(BaseModel):\n    \"\"\"Extra, nonessential information about the protocol.\n\n    This can include data like:\n\n    * A human-readable title and description.\n    * A last-modified date.\n    * A list of authors.\n\n    Metadata may contain fields other than those explicitly\n    listed in this schema.\n\n    The metadata *should not* include information needed\n    to run the protocol correctly. For historical reasons, Python\n    protocols define their `apiLevel` inside their metadata, but\n    this should be considered an exception to the rule.\n    \"\"\"\n\n    model_config = ConfigDict(extra=\"allow\")",
+    "similarity_score": 0.8743710517883301
+  },
+  {
+    "path": "robot-server/robot_server/service/legacy/models/settings.py",
+    "file": "settings.py",
+    "name": "BasePipetteSettingFields",
+    "type": "class",
+    "code": "class BasePipetteSettingFields(BaseModel):\n    quirks: Optional[Dict[str, bool]] = Field(\n        None,\n        description=\"Quirks are behavioral changes associated with \"\n        \"pipettes. For instance, some models of pipette \"\n        \"might need to run their drop tip behavior twice. \"\n        \"Specific pipettes have which can then be enabled \"\n        \"or disabled; quirks that are not originally \"\n        \"defined as compatible with a specific kind of \"\n        \"pipette cannot be added to an incompatible \"\n        \"pipette. Because quirks are only defined as \"\n        \"compatible for a pipette if they should be on, \"\n        \"the default value for all quirks is true.\",\n    )",
+    "similarity_score": 0.874201238155365
+  },
+  {
+    "path": "api/src/opentrons/protocols/models/json_protocol.py",
+    "file": "json_protocol.py",
+    "name": "Modules",
+    "type": "class",
+    "code": "class Modules(BaseModel):\n    \"\"\"\n    Fields describing a single module on the deck\n    \"\"\"\n\n    model_config = ConfigDict(extra=\"allow\")\n\n    slot: str = Field(\n        ...,\n        description=\"string '1'-'12', or special string 'span7_8_10_11' signify \"\n        \"it's a slot on the OT-2 deck. If it's a UUID, it's the \"\n        \"slot on the module referenced by that ID.\",\n    )\n    model: str = Field(\n        ...,\n        description=\"model of module. Eg 'magneticModuleV1' or 'magneticModuleV2'. \"\n        \"This should match a top-level key in \"\n        \"shared-data/module/definitions/2.json\",\n    )",
+    "similarity_score": 0.8716844320297241
+  },
+  {
+    "path": "api/src/opentrons/protocols/models/json_protocol.py",
+    "file": "json_protocol.py",
+    "name": "Labware",
+    "type": "class",
+    "code": "class Labware(BaseModel):\n    \"\"\"\n    Fields describing a single labware on the deck\n    \"\"\"\n\n    model_config = ConfigDict(extra=\"allow\")\n\n    slot: str = Field(\n        ...,\n        description=\"string '1'-'12', or special string 'span7_8_10_11' signify \"\n        \"it's a slot on the OT-2 deck. If it's a UUID, it's the \"\n        \"slot on the module referenced by that ID.\",\n    )\n    definitionId: str = Field(\n        ..., description='reference to this labware\\'s ID in \"labwareDefinitions\"'\n    )\n    displayName: Optional[str] = Field(\n        None,\n        description=\"An optional human-readable nickname for this labware. \"\n        'Eg \"Buffer Trough\"',\n    )",
+    "similarity_score": 0.8704825043678284
+  },
+  {
+    "path": "robot-server/robot_server/labware_offsets/models.py",
+    "file": "models.py",
+    "name": "StoredLabwareOffset",
+    "type": "class",
+    "code": "class StoredLabwareOffset(BaseModel):\n    \"\"\"An offset that the robot adds to a pipette's position when it moves to labware.\"\"\"\n\n    # This is a separate thing from the model defined in protocol engine because as a new API it does\n    # not have to handle legacy locations. There is probably a better way to do this than to copy the model\n    # contents, but I'm not sure what it is.\n    id: str = Field(..., description=\"Unique labware offset record identifier.\")\n    createdAt: datetime = Field(..., description=\"When this labware offset was added.\")\n\n    definitionUri: str = Field(..., description=\"The URI for the labware's definition.\")\n    locationSequence: Sequence[ReturnedLabwareOffsetLocationSequenceComponents] = Field(\n        ...,\n        description=\"Where the labware is located on the robot. Can represent all locations, but may not be present for older runs.\",\n        min_length=1,\n    )\n\n    vector: LabwareOffsetVector = Field(\n        ...,\n        description=\"The offset applied to matching labware.\",\n    )",
+    "similarity_score": 0.8702844381332397
+  },
+  {
+    "path": "api/src/opentrons/protocol_engine/commands/movement_common.py",
+    "file": "movement_common.py",
+    "name": "DestinationPositionResult",
+    "type": "class",
+    "code": "class DestinationPositionResult(BaseModel):\n    \"\"\"Mixin for command results that move a pipette.\"\"\"\n\n    # todo(mm, 2024-08-02): Consider deprecating or redefining this.\n    #\n    # This is here because opentrons.protocol_engine needed it for internal bookkeeping\n    # and, at the time, we didn't have a way to do that without adding this to the\n    # public command results. Its usefulness to callers outside\n    # opentrons.protocol_engine is questionable because they would need to know which\n    # critical point is in play, and I think that can change depending on obscure\n    # things like labware quirks.\n    position: DeckPoint = Field(\n        DeckPoint(x=0, y=0, z=0),\n        description=(\n            \"The (x,y,z) coordinates of the pipette's critical point in deck space\"\n            \" after the move was completed.\"\n        ),\n    )",
+    "similarity_score": 0.8693176507949829
+  },
+  {
+    "path": "api/src/opentrons/protocol_engine/errors/error_occurrence.py",
+    "file": "error_occurrence.py",
+    "name": "schema_extra",
+    "type": "function",
+    "code": "def schema_extra(schema: Dict[str, Any], model: object) -> None:\n        \"\"\"Append the schema to make the errorCode appear required.\n\n        `errorCode`, `wrappedErrors`, and `errorInfo` have defaults because they are not included in earlier\n        versions of this model, _and_ this model is loaded directly from\n        the on-robot store. That means that, without a default, it will\n        fail to parse. Once a default is defined, the automated schema will\n        mark this as a non-required field, which is misleading as this is\n        a response from the server to the client and it will always have an\n        errorCode defined. This hack is required because it informs the client\n        that it does not, in fact, have to account for a missing errorCode, wrappedError, or errorInfo.\n        \"\"\"\n        schema[\"required\"].extend([\"errorCode\", \"wrappedErrors\", \"errorInfo\"])",
+    "similarity_score": 0.8674658536911011
+  },
+  {
+    "path": "robot-server/robot_server/error_recovery/settings/models.py",
+    "file": "models.py",
+    "name": "RequestData",
+    "type": "class",
+    "code": "class RequestData(pydantic.BaseModel):\n    \"\"\"Request body data for `PATCH /errorRecovery/settings`.\"\"\"\n\n    enabled: Annotated[\n        bool | None,\n        pydantic.Field(\n            description=textwrap.dedent(\n                \"\"\"\\\n                If provided, globally enables or disables error recovery mode.\n\n                If this is `true`, a run (see the `/runs` endpoints) will *potentially*\n                enter recovery mode when an error happens, depending on the details of\n                the error and depending on `/runs/{runId}/errorRecoveryPolicy`.\n\n                If this is `false`, a run will just fail if it encounters an error.\n\n                The default is `true`. This currently only has an effect on Flex robots.\n                On OT-2s, error recovery is not supported.\n                \"\"\"\n            )\n        ),\n    ] = None",
+    "similarity_score": 0.8661051988601685
+  },
+  {
+    "path": "api/src/opentrons/protocol_engine/commands/retract_axis.py",
+    "file": "retract_axis.py",
+    "name": "RetractAxisParams",
+    "type": "class",
+    "code": "class RetractAxisParams(BaseModel):\n    \"\"\"Payload required for a Retract Axis command.\"\"\"\n\n    axis: MotorAxis = Field(\n        ...,\n        description=(\n            \"Axis to retract to its home position as quickly as safely possible.\"\n            \" The difference between retracting an axis and homing an axis using the\"\n            \" home command is that a home will always probe the limit switch and\"\n            \" will work as the first motion command a robot will need to execute;\"\n            \" On the other hand, retraction will rely on this previously determined \"\n            \" home position to move to it as fast as safely possible.\"\n            \" So on the Flex, it will move (fast) the axis to the previously recorded home position\"\n            \" and on the OT2, it will move (fast) the axis a safe distance from the previously\"\n            \" recorded home position, and then slowly approach the limit switch.\"\n        ),\n    )",
+    "similarity_score": 0.8649933338165283
+  },
+  {
+    "path": "shared-data/python/opentrons_shared_data/robot/types.py",
+    "file": "types.py",
+    "name": "RobotTypeEnum",
+    "type": "class",
+    "code": "class RobotTypeEnum(enum.Enum):\n    \"\"\"An enum representing the active robot type.\"\"\"\n\n    # TODO we should switch over to using Enums fully (if possible)\n    # to represent our robot types in code -- rather than having\n    # to string match everywhere.\n    OT2 = enum.auto()\n    FLEX = enum.auto()\n\n    @classmethod\n    def robot_literal_to_enum(cls, robot_type: RobotType) -> \"RobotTypeEnum\":\n        \"\"\"Convert Robot Type Literal to Robot Type Enum.\"\"\"\n        if robot_type == \"OT-2 Standard\":\n            return cls.OT2\n        elif robot_type == \"OT-3 Standard\":\n            return cls.FLEX\n        # No final `else` statement, depend on mypy exhaustiveness checking",
+    "similarity_score": 0.8649038672447205
+  },
+  {
+    "path": "api/src/opentrons/protocol_engine/commands/pick_up_tip.py",
+    "file": "pick_up_tip.py",
+    "name": "TipPhysicallyMissingError",
+    "type": "class",
+    "code": "class TipPhysicallyMissingError(ErrorOccurrence):\n    \"\"\"Returned when sensors determine that no tip was physically picked up.\n\n    That space in the tip rack is marked internally as not having any tip,\n    as if the tip were consumed by a pickup.\n\n    The pipette will act as if no tip was picked up. So, you won't be able to aspirate\n    anything, and movement commands will assume there is no tip hanging off the bottom\n    of the pipette.\n    \"\"\"\n\n    # The thing above about marking the tips as used makes it so that\n    # when the protocol is resumed and the Python Protocol API calls\n    # `get_next_tip()`, we'll move on to other tips as expected.\n\n    isDefined: bool = True\n    errorType: Literal[\"tipPhysicallyMissing\"] = \"tipPhysicallyMissing\"\n    errorCode: str = ErrorCodes.TIP_PICKUP_FAILED.value.code\n    detail: str = \"No Tip Detected\"",
+    "similarity_score": 0.8645573854446411
+  },
+  {
+    "path": "api/src/opentrons/protocol_reader/protocol_source.py",
+    "file": "protocol_source.py",
+    "name": "ProtocolFileRole",
+    "type": "class",
+    "code": "class ProtocolFileRole(str, Enum):\n    \"\"\"The purpose of a given file in a protocol.\n\n    Args:\n        MAIN: The protocol's main file. In a JSON protocol, this is will\n            be the JSON file. In a Python protocol, this is the file\n            that exports the main `run` method.\n        LABWARE: A labware definition file, loadable by a\n            Python file in the same protocol.\n        DATA: An arbitrary text or csv file for usage in `bundled_data`\n            for a Python protool\n    \"\"\"\n\n    MAIN = \"main\"\n    LABWARE = \"labware\"\n    DATA = \"data\"",
+    "similarity_score": 0.8641030192375183
+  },
+  {
+    "path": "api/src/opentrons/protocol_reader/protocol_source.py",
+    "file": "protocol_source.py",
+    "name": "ProtocolSource",
+    "type": "class",
+    "code": "class ProtocolSource:\n    \"\"\"A value object representing a protocol and its source files on disk.\n\n    This includes pointers to the files,\n    plus some basic information that can be readily inferred from those files.\n    (Excluding information that would require in-depth simulation of the protocol.)\n\n    Attributes:\n        directory: The directory containing the protocol files\n            (and only the protocol files), or ``None`` if this is unknown.\n        main_file: The location of the protocol's main file on disk.\n        content_hash: A md5 hex digest of the protocol source combined with\n            custom labware that was provided at the time of protocol creation\n        files: Descriptions of all files that make up the protocol.\n        metadata: Arbitrary metadata specified by the protocols.\n        config: Protocol execution configuration.\n        labware_definitions: Labware definitions provided by separate\n            labware files or the main JSON protocol file, if present.\n            This is not necessarily the same set of labware definitions\n            that the protocol will actually attempt to load.\n    \"\"\"\n\n    directory: Optional[Path]\n    main_file: Path\n    content_hash: str\n    files: List[ProtocolSourceFile]\n    metadata: Metadata\n    robot_type: RobotType\n    config: ProtocolConfig",
+    "similarity_score": 0.8630393743515015
+  },
+  {
+    "path": "robot-server/robot_server/runs/run_store.py",
+    "file": "run_store.py",
+    "name": "BadRunResource",
+    "type": "class",
+    "code": "class BadRunResource:\n    \"\"\"A representation for an action in the run store that cannot be loaded.\n\n    This will get created, for instance, when loading a run made in a future\n    version with an action that does not exist in the current version. This should\n    never happen in released versions, but it does sometimes during development,\n    and without handling like this it would cause any list-all request to fail.\n\n    The ok field is a union discriminator. Other elements will be filled in as they\n    can be with whatever data was recoverable and should not be relied upon.\n    \"\"\"\n\n    ok: Literal[False]\n    run_id: str\n    protocol_id: Optional[str]\n    created_at: datetime\n    actions: List[RunAction]\n    error: EnumeratedError",
+    "similarity_score": 0.8619741201400757
+  },
+  {
+    "path": "robot-server/robot_server/runs/command_models.py",
+    "file": "command_models.py",
+    "name": "CommandCollectionLinks",
+    "type": "class",
+    "code": "class CommandCollectionLinks(BaseModel):\n    \"\"\"Links returned along with a collection of commands.\"\"\"\n\n    current: Optional[CommandLink] = Field(\n        None,\n        description=(\n            'Information about the \"current\" command.'\n            ' The \"current\" command is the one that\\'s running right now,'\n            \" or, if there is none, the one that was running most recently.\"\n        ),\n    )\n\n    currentlyRecoveringFrom: Optional[CommandLink] = Field(\n        None,\n        description=(\n            \"Information about the command currently undergoing error recovery.\"\n            \" This is basically the most recent protocol command to have failed,\"\n            \" except that once you complete error recovery\"\n            \" (see `GET /runs/{id}/actions`), this goes back to being\"\n            \" `null` or omitted.\"\n        ),\n    )",
+    "similarity_score": 0.8616272211074829
+  },
+  {
+    "path": "api/src/opentrons/protocol_engine/types/labware_offset_location.py",
+    "file": "labware_offset_location.py",
+    "name": "OnAddressableAreaOffsetLocationSequenceComponent",
+    "type": "class",
+    "code": "class OnAddressableAreaOffsetLocationSequenceComponent(BaseModel):\n    \"\"\"Offset location sequence component for a labware on an addressable area.\"\"\"\n\n    kind: Literal[\"onAddressableArea\"] = \"onAddressableArea\"\n    addressableAreaName: str = Field(\n        ...,\n        description=(\n            'The ID of an addressable area that a labware or module can be loaded onto, such as (on the OT-2) \"2\" '\n            'or (on the Flex) \"C1\". '\n            \"\\n\\n\"\n            \"On the Flex, this field must be correct for the kind of entity it hosts. For instance, if the prior entity \"\n            \"in the location sequence is an `OnModuleOffsetLocationSequenceComponent(moduleModel=temperatureModuleV2)`, \"\n            \"this entity must be temperatureModuleV2NN where NN is the slot name in which the module resides. \"\n        ),\n    )",
+    "similarity_score": 0.8602539300918579
+  },
+  {
+    "path": "api/src/opentrons/protocol_engine/actions/actions.py",
+    "file": "actions.py",
+    "name": "SucceedCommandAction",
+    "type": "class",
+    "code": "class SucceedCommandAction:\n    \"\"\"Mark a given command as succeeded.\n\n    At the time of dispatching this action, the command must be running.\n    \"\"\"\n\n    command: Command\n    \"\"\"The command in its new succeeded state.\"\"\"\n\n    state_update: StateUpdate = dataclasses.field(\n        # todo(mm, 2024-08-26): This has a default only to make it easier to transition\n        # old tests while https://opentrons.atlassian.net/browse/EXEC-639 is in\n        # progress. Make this mandatory when that's completed.\n        default_factory=StateUpdate\n    )",
+    "similarity_score": 0.8602254986763
+  },
+  {
+    "path": "api/src/opentrons/protocols/types.py",
+    "file": "types.py",
+    "name": "_ProtocolCommon",
+    "type": "class",
+    "code": "class _ProtocolCommon:\n    text: Union[str, bytes]\n    \"\"\"The original text of the protocol file in the format it was specified with.\n\n    This leads to a wide type but it is actually quite important that we do not ever\n    str.decode('utf-8') this because it will break the interpreter's understanding of\n    line numbers for if we have to format an exception.\n    \"\"\"\n\n    filename: Optional[str]\n    \"\"\"The original name of the main protocol file, if it had a name.\n\n    For JSON protocols, this will be the name of the .json file.\n    For Python protocols, this will be the name of the .py file.\n    For bundled protocols, this will be the name of the .zip file.\n\n    This can be `None` if, for example, we've parsed the protocol from an in-memory text stream.\n    \"\"\"\n\n    # TODO(mm, 2023-06-22): Move api_level out of _ProtocolCommon and into PythonProtocol.\n    # JSON protocols do not have an intrinsic api_level, especially since JSONv6,\n    # where they are no longer executed via the Python Protocol API.\n    api_level: \"APIVersion\"\n\n    robot_type: RobotType",
+    "similarity_score": 0.8600125312805176
+  },
+  {
+    "path": "robot-server/robot_server/robot/calibration/check/models.py",
+    "file": "models.py",
+    "name": "SessionCreateParams",
+    "type": "class",
+    "code": "class SessionCreateParams(BaseModel):\n    \"\"\"\n    Calibration Health Check create params\n    \"\"\"\n\n    hasCalibrationBlock: bool = Field(\n        False,\n        description=\"Whether to use a calibration block in the\"\n        \"calibration health check flow.\",\n    )\n    # todo(mm, 2025-02-13): This should restrict input to labware schema 2 to protect\n    # robot_server.robot.calibration legacy internals.\n    # https://opentrons.atlassian.net/browse/EXEC-1230\n    tipRacks: List[Dict[str, Any]] = Field(\n        [],\n        description=\"A list of labware definitions to use in\"\n        \"calibration health check\",\n    )",
+    "similarity_score": 0.8595421314239502
+  },
+  {
+    "path": "api/src/opentrons/protocol_engine/commands/calibration/calibrate_gripper.py",
+    "file": "calibrate_gripper.py",
+    "name": "CalibrateGripperParams",
+    "type": "class",
+    "code": "class CalibrateGripperParams(BaseModel):\n    \"\"\"Parameters for a `calibrateGripper` command.\"\"\"\n\n    jaw: CalibrateGripperParamsJaw = Field(\n        ...,\n        description=(\n            \"Which of the gripper's jaws to use to measure its offset.\"\n            \" The robot will assume that a human operator has already attached\"\n            \" the capacitive probe to the jaw and none is attached to the other jaw.\"\n        ),\n    )\n\n    otherJawOffset: Vec3f | SkipJsonSchema[None] = Field(\n        None,\n        description=(\n            \"If an offset for the other probe is already found, then specifying it here\"\n            \" will enable the CalibrateGripper command to complete the calibration\"\n            \" process by calculating the total offset and saving it to disk.\"\n            \" If this param is not specified then the command will only find and return\"\n            \" the offset for the specified probe.\"\n        ),\n        json_schema_extra=_remove_default,\n    )",
+    "similarity_score": 0.8586099147796631
+  },
+  {
+    "path": "api/src/opentrons/protocol_api/core/legacy/load_info.py",
+    "file": "load_info.py",
+    "name": "LabwareLoadInfo",
+    "type": "class",
+    "code": "class LabwareLoadInfo:\n    \"\"\"Information about a successful labware load.\n\n    This is a separate class from the main user-facing `Labware` class\n    because this is easier to construct in unit tests.\n    \"\"\"\n\n    labware_definition: LabwareDefinition2\n\n    # todo(mm, 2021-10-11): Namespace, load name, and version can be derived from the\n    # definition. Should they be removed from here?\n    labware_namespace: str\n    labware_load_name: str\n    labware_version: int\n\n    # If on_module is True, deck_slot is the slot occupied by the module that the\n    # labware is on.\n    deck_slot: DeckSlotName\n    on_module: bool\n\n    # The ID of the labware offset resource that applied to this labware load,\n    # if there was one.\n    offset_id: Optional[str]\n\n    # user-specified label if present\n    labware_display_name: Optional[str]",
+    "similarity_score": 0.8584445714950562
+  },
+  {
+    "path": "robot-server/robot_server/protocols/analysis_models.py",
+    "file": "analysis_models.py",
+    "name": "AnalysisResult",
+    "type": "class",
+    "code": "class AnalysisResult(str, Enum):\n    \"\"\"Result of a completed protocol analysis.\n\n    The result indicates whether the protocol is expected to run successfully.\n\n    Properties:\n        OK: No problems were found during protocol analysis.\n        NOT_OK: Problems were found during protocol analysis. Inspect\n            `analysis.errors` for error occurrences.\n        PARAMETER_VALUE_REQUIRED: A value is required to be set for a parameter\n            in order for the protocol to be analyzed/run. The absence of this does not\n            inherently mean there are no parameters, as there may be defaults for all\n            or unset parameters are not referenced or handled via try/except clauses.\n    \"\"\"\n\n    OK = \"ok\"\n    NOT_OK = \"not-ok\"\n    PARAMETER_VALUE_REQUIRED = \"parameter-value-required\"",
+    "similarity_score": 0.8581005930900574
+  }
+]
