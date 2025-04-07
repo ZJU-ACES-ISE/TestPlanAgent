@@ -324,11 +324,12 @@ class Agent_utils:
                 file.pop('patch', None)
         tmp_dir = self.config['Judge']['tmp_dir']
         os.makedirs(tmp_dir, exist_ok=True)
-        tmp_path = os.path.join(tmp_dir, "PR_body.json")
+        tmp_path = os.path.join(tmp_dir, f"{self.config['Judge']['pull_number']}_PR_body.json")
+        tmp_info = {'PR_Content': dict_result["Description of changes"], 'PR_Changed_Files': PR_Changed_Files, 'Test_Plan': dict_result["Test plan"]}
         with open(f"{tmp_path}", 'w') as f:
-            json.dump(dict_result, f)
+            json.dump(tmp_info, f)
 
-        return {'PR_Content': dict_result["Description of changes"], 'PR_Changed_Files': PR_Changed_Files, 'Test_Plan': dict_result["Test plan"]}
+        return tmp_info
 
     def explore_project_structure(
         self, 
