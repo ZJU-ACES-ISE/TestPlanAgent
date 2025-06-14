@@ -16,7 +16,6 @@ import sys
 import re
 import warnings
 from collections import Counter, defaultdict, namedtuple
-from pathlib import Path
 import builtins
 import inspect
 import networkx as nx
@@ -64,7 +63,8 @@ class CodeGraph:
 
         # self.token_count = main_model.token_count
         self.repo_content_prefix = repo_content_prefix
-        self.structure = create_structure(self.root)
+        # self.structure = create_structure(self.root)
+        
 
     def get_code_graph(self, other_files, mentioned_fnames=None):
         if self.max_map_tokens <= 0:
@@ -343,7 +343,7 @@ class CodeGraph:
                 continue
             elif tag_name in builtins_funs:
                 continue
-
+                    
             if category == 'class':
                 # try:
                 #     class_functions = self.get_class_functions(tree_ast, tag_name)
@@ -603,7 +603,7 @@ if __name__ == "__main__":
     # dir_name = sys.argv[1]
     with open('./source/config.yaml', 'r') as f:
         config = yaml.load(f, Loader=yaml.FullLoader)
-    dir_name = config['CKG']['project_dir']
+    dir_name = "/data/veteran/project/TestPlanAgent/test_project/opentrons"
 
     repo_name = dir_name.split(os.path.sep)[-1]
     code_graph = CodeGraph(root=dir_name)

@@ -43,7 +43,7 @@ def extract_repo_and_pr_number(pr_url):
 def get_pr_files(repo, pr_number, session=None, max_retries=3):
     """获取PR中的文件列表，带有重试机制"""
     url = f"https://api.github.com/repos/{repo}/pulls/{pr_number}/files"
-    token = "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"
+    token = "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"
     headers = {
         'Authorization': f'token {token}',  
         'Accept': 'application/vnd.github.v3+json',

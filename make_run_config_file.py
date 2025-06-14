@@ -36,7 +36,8 @@ def generate_config(pr_url, output_file_name, llm_model, api_key, llm_url, outpu
             'output_file_name': output_file_name
         },
         'Judge': {
-            'tmp_dir': f'./result/tot_test/{repo}/tmp/'
+            'tmp_dir': f'./result/tot_test/{repo}/tmp/',
+            'pull_number': pr_number
         }
     }
     
@@ -51,7 +52,7 @@ def save_config(config, output_file='config.yaml'):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Generate YAML configuration for a GitHub PR')
     parser.add_argument('--pr_url', default='https://api.github.com/repos/Opentrons/opentrons/pulls/16571', help='The GitHub PR URL')
-    parser.add_argument('--model', default='qwen2.5-coder-32b-instruct', help='LLM model to use')
+    parser.add_argument('--model', default='gpt-3.5-turbo', help='LLM model to use')
     parser.add_argument('--api-key', default='sk-6072ffbc181542f2862a1fd04d8291c0', help='LLM api key')
     parser.add_argument('--api', default='https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions', help='LLM API URL')
     parser.add_argument('--output', default='./source/config.yaml', help='Output YAML file')

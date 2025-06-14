@@ -4,6 +4,8 @@ import json
 
 import yaml
 
+
+
 with open('./source/config.yaml', 'r') as f:
     config = yaml.load(f, Loader=yaml.FullLoader)
 
@@ -59,11 +61,12 @@ def pr_commits():
     with open('./log/pr_commits.json', 'w') as json_file:
         json.dump(pr_commits, json_file, indent=4)
 
-def llm_restructure_pr_body(pr_body):
+def llm_restructure_pr_body(config, pr_body):
+    from tasks.BaseTask import BaseTask
 
     # api_key = os.environ.get("OPENAI_API_KEY")
-    api_key = config['Agent']['api_key']
-    url = config['Agent']['llm_url'] 
+    # api_key = config['Agent']['api_key']
+    # url = config['Agent']['llm_url'] 
 
     # Prompt to guide the LLM in restructuring the PR body
     user_prompt = f"""
@@ -105,27 +108,7 @@ def llm_restructure_pr_body(pr_body):
         }}
     """
 
-    # 定义请求体
-    data = {
-        "model": f"{config['Agent']['llm_model']}",  
-        "messages": [
-            {"role": "user", "content": user_prompt}
-        ]
-    }
-
-    # 设置头部
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json"
-    }
-
-    # 发起请求
-    response = requests.post(url, json=data, headers=headers)
-    
-    response_dict = json.loads(response.text.strip())
-    # Parse the result
-    result = response_dict['choices'][0]['message']['content']
-
+    result, _ = BaseTask.llm("", user_prompt, config['Agent']['llm_model'])
     return result
 
 def pr_restructure(owner, repo, pr_number, token):

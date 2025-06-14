@@ -5,6 +5,7 @@ file_path = 'spider/pull_requests.txt'
 
 with open(file_path, 'r', encoding='utf-8') as file:
     file_content = file.read()
+    
 
 # 修正格式：在字典之间插入逗号，并将内容包裹成 JSON 数组
 fixed_content = file_content.replace("}\n{", "},\n{")

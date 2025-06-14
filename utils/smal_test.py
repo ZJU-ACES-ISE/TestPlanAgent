@@ -1,7 +1,81 @@
 import json
+import re
 
-str_a = '''{"body": "# Overview\\n\\nThis PR addresses two major tasks: 1) adding the step name above deck map in ProtocolSteps component, and 2) appropriately disabling buttons from step overflow menus when appropriate. Namely, when a step is in editing, its overflow menu should not permit viewing details (for transfer and thermocycler profile steps). When a step form has unsaved changes, its overflow menu should not permit duplication. If batch edit is open, neither steps\'s overflow menu should permit batch duplication. Deletion is available in any scenario. Also, the opening of a step form edit toolbox takes priority over step details toolbox.\\n\\nIn addition, I pass the `zIndex` prop for `Toolbox` only if it is of position fixed. \\n\\nCloses AUTH-878, Closes AUTH-880\\n\\n## Test Plan and Hands on Testing\\n\\n#### overflow menu\\n\\nhttps://github.com/user-attachments/assets/95d8c2fc-4db8-4b08-a6ac-70b8953d474c\\n\\n\\n- create or upload a protocol with multiple transfer steps\\n- open a transfer step overflow menu and select \'view details\'. Verify that the step details toolbox opens\\n- with details open, open the step\'s overflow menu again, select \\"edit step\\". Verify that the stepform edit toolbox opens and replaces the step details toolbox\\n- with edit toolbox open, open the step\'s overflow menu again. Verify that only \\"duplicate step\\" and \\"delete step\\" options are enabled\\n- modify any field in the edit toolbox, open the step\'s overflow menu again. Verify that only \\"delete step\\" option is enabled\\n- close this toolbox and control+click two transfer steps to open batch edit toolbox\\n- verify that \\"duplicate steps\\" and \\"delete steps\\" options are enabled\\n- modify any field in the batch edit toolbox, open the step\'s overflow menu again. Verify that only \\"delete steps\\" option is enabled\\n\\n#### step names\\n- select or hover any step\\n- verify that the steps default or custom name displays above the deck map\\n\\n## Changelog\\n\\n- add step names\\n- update logic for disabling overflow menu items\\n- add tests\\n- fix small styling throughout ProtocolSteps sub components\\n\\n## Review requests\\n\\nsee test plan\\n\\n## Risk assessment\\n\\nlow"}'''
+def extract_components(text):
+    thought_pattern = r'\*\*Thought\*\*: (.*?)\n'
+    action_name_pattern = r'```(.*?)\n'
+    action_params_pattern = r'```.*?\n(.*?)```'
+    expected_info_pattern = r'\*\*Expected Information\*\*: (.*?)\n'
+    
+    pair_pattern = r'#### Thought-Action Pair (TA\d+)(.*?)(?=#### Thought-Action Pair TA\d+|\Z)'
+    pairs = re.findall(pair_pattern, text, re.DOTALL)
+    
+    results = []
+    
+    for pair_id, pair_content in pairs:
+        thought_match = re.search(thought_pattern, pair_content)
+        action_name_match = re.search(action_name_pattern, pair_content)
+        action_params_match = re.search(action_params_pattern, pair_content, re.DOTALL)
+        expected_info_match = re.search(expected_info_pattern, pair_content)
+        
+        if thought_match and action_name_match and action_params_match and expected_info_match:
+            try:
+                action_params_json = json.loads(action_params_match.group(1).strip())
+            except json.JSONDecodeError:
+                action_params_json = {"error": "Invalid JSON"}
+            
+            pair_dict = {
+                "id": pair_id.strip(),
+                "thought": thought_match.group(1).strip(),
+                "action_name": action_name_match.group(1).strip(),
+                "action_parameters": action_params_json,
+                "expected_information": expected_info_match.group(1).strip()
+            }
+            
+            results.append(pair_dict)
 
-json_str_a = json.loads(str_a)
+# 示例文本
+text = '''
+### Exploration Step 2                                                                                  
+                                                                                                                                                                 
+#### Thought-Action Pair TA004                                                                                                                                   
+- **Thought**: Since the `load_module` function has been modified, I need to understand how it interacts with other components in the system to ensure that all d
+ependencies are correctly handled.                                                                                                                               
+- **Action**: search_code_dependencies                                                                                                                           
+- **Action Parameters**: {"entity_name": "load_module"}                                                                                                          
+- **Expected Information**: This will help me identify which functions or classes call `load_module` and which functions it calls, allowing me to understand the 
+broader impact of these changes.                                                                                                                                 
+                                                                                                                                                                 
+#### Thought-Action Pair TA005                                                                                                                                   
+- **Thought**: The PR involves changes to the deck configuration, specifically the introduction of fixture definitions for modules. I need to understand how thes
+e changes affect the overall deck configuration validation.                                                                                                      
+- **Action**: search_class_in_project                                                                                                                            
+- **Action Parameters**: {"class_name": "DeckConfiguration"}                                                                                                     
+- **Expected Information**: This will provide details about the `DeckConfiguration` class, including its methods and properties, which are likely involved in val
+idating the new fixture definitions.                                                                                                                             
+                                                                                                                                                                 
+#### Thought-Action Pair TA006                                                                                                                                   
+- **Thought**: The PR includes updates to the `/deck_configuration` endpoint. I need to examine the changes to this endpoint to understand how it handles module 
+fixtures.                                                                                                                                                        
+- **Action**: view_code_changes                                                                                                                                  
+- **Action Parameters**: {"file_path": "api/src/opentrons/calibration_storage/deck_configuration.py"}                                                            
+- **Expected Information**: This will show me the exact changes made to the endpoint, including any new functionality or modifications to existing logic.        
+                                                                                                                                                                 
+#### Thought-Action Pair TA007                                                                                                                                   
+- **Thought**: The PR modifies several files related to the protocol engine and state management. I need to understand how these changes affect the overall state
+ management and validation of deck configurations.                                                                                                               
+- **Action**: search_class_in_project                                                                                                                            
+- **Action Parameters**: {"class_name": "State"}                                                                                                                 
+- **Expected Information**: This will help me understand the `State` class, which is likely central to managing and validating deck configurations, including the
+ new fixture definitions.                                                                                                                                        
+                                                                                                                                                                 
+#### Thought-Action Pair TA008                                                                                                                                   
+- **Thought**: The PR includes changes to the `types.py` files in both the `calibration_storage` and `protocol_engine` directories. I need to examine these chang
+es to understand how they impact the type definitions used throughout the system.                                                                                
+- **Action**: view_code_changes                                                                                                                                  
+- **Action Parameters**: {"file_path": "api/src/opentrons/calibration_storage/types.py"}
+- **Expected Information**: This will show me the changes to the type definitions, which are crucial for ensuring consistency and correctness across the system.
+'''
 
-print(json_str_a)
+result = extract_components(text)
+result

@@ -14,7 +14,7 @@ from make_run_config_file import generate_config, save_config
 from agent.test_plan_agent_v1_1 import agent
 
 # GitHub API配置
-GITHUB_TOKEN = "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"
+GITHUB_TOKEN = "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"
 POLLING_INTERVAL = 5  # 秒
 HEADERS = {
     "Authorization": f"token {GITHUB_TOKEN}",
@@ -24,7 +24,9 @@ HEADERS = {
 
 output_file_name  = ""
 llm_model = "gpt-4o"
-llm_api = "https://api.gptsapi.net/v1/chat/completions"
+llm_api = "https://api.chatanywhere.tech/v1/chat/completions"
+# api_key = os.environ.get("OPENAI_API_KEY")
+api_key = "sk-wvvB8thiOVcpwJw1i4OI4FqFSItWyC5IePz3hAgrOJ0Jh1MY"
 output = "./source/config.yaml"
 output_dir = None
 
@@ -89,7 +91,7 @@ def get_pr_url_from_notification(notification):
 
 def create_test_plan(pr_url):
     # 调用测试计划API
-    config = generate_config(pr_url, output_file_name, llm_model, llm_api, output_dir)
+    config = generate_config(pr_url, output_file_name, llm_model, api_key, llm_api, output_dir)
     save_config(config, output)
 
     test_plan = agent(output)

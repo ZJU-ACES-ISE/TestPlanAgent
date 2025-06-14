@@ -19,8 +19,8 @@ def llm(config, system_prompt, user_prompt):
     # with open('./source/config.yaml', 'r') as f:
     #     config = yaml.load(f, Loader=yaml.FullLoader)
 
-    api_key = os.environ.get("OPENAI_API_KEY")
-    # api_key = "sk-Y9Ba7ca3cb6235a6b6f2d371c3bc11db13f0a1e8bf9a4p5o"
+    # api_key = os.environ.get("OPENAI_API_KEY")
+    api_key = "sk-wvvB8thiOVcpwJw1i4OI4FqFSItWyC5IePz3hAgrOJ0Jh1MY"
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json"

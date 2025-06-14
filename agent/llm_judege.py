@@ -7,7 +7,7 @@ import requests
 import yaml
 sys.path.append(str(Path(__file__).resolve().parents[1]))  # 将父级目录加入执行目录列表
 
-from prompt.test_plan_llm_judge_prompt_v1_1 import PR_TEST_PLAN_SCORING_SYSTEM_PROMPT, PR_TEST_PLAN_SCORING_USER_PROMPT
+from prompt.judge.test_plan_llm_judge_prompt_v1_1 import PR_TEST_PLAN_SCORING_SYSTEM_PROMPT, PR_TEST_PLAN_SCORING_USER_PROMPT
 from utils.tools import reformat_pr_info_for_user_prompt
 
 with open('./source/config.yaml', 'r') as f:
