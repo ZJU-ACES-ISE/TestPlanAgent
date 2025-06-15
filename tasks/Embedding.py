@@ -16,7 +16,7 @@ from langchain_core.documents import Document
 from tasks.BaseTask import BaseTask
 from prompt.embedding.test_plan import EMBEDDING_TEST_PLAN_SYSTEM_PROMPT, EMBEDDING_TEST_PLAN_USER_PROMPT
 
-class ImprovedEmbedding(BaseTask):
+class Embedding(BaseTask):
     """
     改进的嵌入策略，支持代码和文档的混合召回。
     对代码文件提取函数/类，对非代码文件进行chunk分割。
@@ -80,8 +80,106 @@ class ImprovedEmbedding(BaseTask):
             except:
                 print(f"Warning: Could not load parser for {lang}")
         
-        # 分析项目并生成内容
-        self.analyze_project(self.config['CKG']['project_dir'])
+                # 检查是否需要重新分析项目
+        self.project_dir = self.config['CKG']['project_dir']
+        self.content_structure_file = os.path.join(self.project_dir, "content_structure.json")
+        
+        # 可以通过配置控制是否检查文件时间戳
+        check_timestamps = self.config.get('Embedding', {}).get('check_file_timestamps', False)
+        
+        if self.should_reanalyze_project(check_timestamps=check_timestamps):
+            print("Re-analyzing project...")
+            self.analyze_project(self.project_dir)
+        else:
+            print("Loading existing content structure...")
+            self.load_content_structure()
+    
+    def should_reanalyze_project(self, check_timestamps=False):
+        """
+        检查是否需要重新分析项目
+        基于以下条件：
+        1. content_structure.json 文件不存在
+        2. content_structure.json 文件为空或格式错误
+        3. 项目文件有更新（可选：基于修改时间）
+        
+        Args:
+            check_timestamps (bool): 是否检查文件修改时间
+        """
+        # 检查文件是否存在
+        if not os.path.exists(self.content_structure_file):
+            print("Content structure file not found, need to analyze project")
+            return True
+        
+        # 检查文件是否有效
+        try:
+            with open(self.content_structure_file, 'r', encoding='utf-8') as f:
+                content_data = json.load(f)
+            
+            # 检查是否为空或无效格式
+            if not content_data or not isinstance(content_data, list):
+                print("Content structure file is empty or invalid, need to re-analyze")
+                return True
+            
+            # 检查是否有内容项
+            if len(content_data) == 0:
+                print("No content items found in structure file, need to re-analyze")
+                return True
+            
+            # if check_timestamps:
+            #     if self._has_project_files_changed():
+            #         print("Project files have been modified, need to re-analyze")
+            #         return True
+            
+            print(f"Found {len(content_data)} existing content items in cache")
+            return False
+            
+        except (json.JSONDecodeError, Exception) as e:
+            print(f"Error reading content structure file: {e}, need to re-analyze")
+            return True
+    
+    def _has_project_files_changed(self):
+        """检查项目文件是否在content_structure.json之后有修改"""
+        try:
+            structure_mtime = os.path.getmtime(self.content_structure_file)
+            
+            # 检查项目目录中的文件
+            for root, dirs, files in os.walk(self.project_dir):
+                # 忽略隐藏目录
+                dirs[:] = [d for d in dirs if not d.startswith('.')]
+                
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    
+                    # 跳过无效文件和content_structure.json本身
+                    if (self.is_invalid_file(file_path) or 
+                        file_path == self.content_structure_file):
+                        continue
+                    
+                    # 检查文件修改时间
+                    try:
+                        file_mtime = os.path.getmtime(file_path)
+                        if file_mtime > structure_mtime:
+                            print(f"File {file_path} modified after cache")
+                            return True
+                    except OSError:
+                        continue
+            
+            return False
+        except Exception as e:
+            print(f"Error checking file timestamps: {e}")
+            return True
+    
+    def load_content_structure(self):
+        """从现有的 content_structure.json 文件加载内容结构"""
+        try:
+            with open(self.content_structure_file, 'r', encoding='utf-8') as f:
+                self.content_info = json.load(f)
+            print(f"Loaded {len(self.content_info)} content items from cache")
+        except Exception as e:
+            print(f"Error loading content structure: {e}")
+            # 如果加载失败，重新分析
+            print("Falling back to re-analyzing project...")
+            self.analyze_project(self.project_dir)
     
     def is_code_file(self, filename):
         """判断文件是否为代码文件"""

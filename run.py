@@ -347,7 +347,7 @@ def main():
     # 任务设置
     parser.add_argument('--strategy', type=str, 
                        choices=['InOut', 'Embedding', 'ReAct', 'TOT'], 
-                       default='InOut',
+                       default='Embedding',
                        help='Test plan generation strategy')
     
     # 裁判设置

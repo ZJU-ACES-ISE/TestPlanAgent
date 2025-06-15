@@ -324,7 +324,7 @@ class TOT(BaseTask):
         
         # 结合所有会话消息
         session_messages = '\n'.join(session_message_list)
-                
+
         # 生成测试计划
         test_plan_edit_prompt = PR_TEST_PLAN_EDIT_PROMPT.format(
             PR_Content=self.PR_Content,
