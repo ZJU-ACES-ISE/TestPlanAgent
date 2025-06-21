@@ -236,7 +236,15 @@ IMPORTANT RULES:
 - NEVER include explanations inside the Action code block
 - Make sure each thought-action pair explores a different aspect of the PR
 
-When you have gathered sufficient information, I'll ask you to provide your final test plan in the following format:
+After receiving the results from the human, you should provide your next thought and action. Continue this process until you have gathered enough information to create a comprehensive test plan.
+
+There are two situations in which you can begin to write a TEST PLAN:
+1. when you believe you have gathered enough information to complete the test plan
+2. when you receive a clear prompt to begin generating the test plan.
+
+Please provide your conclusions in the following format:
+
+### Thought: I have gathered enough information to create a comprehensive test plan for this PR.
 
 ### Test Plan Details:
 ```
@@ -262,6 +270,9 @@ When you have gathered sufficient information, I'll ask you to provide your fina
 ```
    
 # TIPS:
+- Focus on the CHANGED code first - that's what needs the most testing
+- Prioritize tests based on risk and complexity of changes
+- Include both positive test cases (expected behavior) and negative test cases (error handling)
 - Your test plan should be specific enough for any tester to follow without requiring additional information
 - Strive for accuracy, clarity, and completeness in your test plan
 """
@@ -345,7 +356,12 @@ Based on above informations, please:
    - Complexity of changes
    - Customer impact
 
-Remember to consider both positive testing (expected behavior) and negative testing (error handling) in your plan.
+# TIPS:
+- Focus on the CHANGED code first - that's what needs the most testing
+- Prioritize tests based on risk and complexity of changes
+- Include both positive test cases (expected behavior) and negative test cases (error handling)
+- Your test plan should be specific enough for any tester to follow without requiring additional information
+- Strive for accuracy, clarity, and completeness in your test plan
 """
 
 PR_TEST_PLAN_CORRECT_PROMPT = f"""
@@ -369,8 +385,6 @@ Please help me create a comprehensive test plan for this pull request (PR) using
 The following information has already been gathered from previous exploration steps. Please review carefully and DO NOT propose actions to collect this information again:
 
 {{Previously_Gathered_Information}}
-
-
 
 ## Your Task
 

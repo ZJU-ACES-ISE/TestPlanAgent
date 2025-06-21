@@ -34,8 +34,7 @@ class ReAct(BaseTask):
             PR_Content=self.PR_Content,
             summaries=self.PR_Changed_Files,
             Previously_Gathered_Information="",
-            error_content='No record of incorrect tool use.',
-
+            error_content='No record of incorrect tool use.'
         ) + '\n'
         
         test_plan = ""
@@ -63,7 +62,7 @@ class ReAct(BaseTask):
             else:
                 content, truncated = self.llm(PR_TEST_PLAN_EDIT_SYSTEM_PROMPT, user_prompt, self.config['Agent']['llm_model'])
             
-            # 该轮达到最大token限度，不在循环，直接生成测试计划
+            # 该轮达到最大token限度，不再循环，直接生成测试计划
             if truncated and 'Test Plan Details' not in content:
                 user_prompt = PR_TEST_PLAN_EDIT_PROMPT.format(
                     PR_Content=self.PR_Content,

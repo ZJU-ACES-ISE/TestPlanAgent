@@ -188,10 +188,11 @@ class BaseTask(ABC):
         # 估计token数量并在必要时截断提示
         system_prompt, user_prompt, truncated = truncate_prompts(system_prompt, user_prompt, model, context_length, max_output_length)
 
-        # if 'deepseek' in model:
+        if 'deepseek' in model:
             # -官网
             # api_key = "sk-da7a5e373876461f9efb80e7c15828a5"
-            # url = "https://api.deepseek.com/chat/completions"
+            api_key = "sk-eb17ef4a6a49423ab4d26cd3ff17c33d"
+            url = "https://api.deepseek.com/chat/completions"
             # -阿里
             # api_key = "sk-6072ffbc181542f2862a1fd04d8291c0"
             # url = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
@@ -202,7 +203,7 @@ class BaseTask(ABC):
             # -火山
             # api_key = "ca571e3f-f63c-415f-a6ff-571519d9a72c"
             # url = "https://ark.cn-beijing.volces.com/api/v3/chat/completions"
-        if 'qwen' in model:
+        elif 'qwen' in model:
             api_key = "sk-6072ffbc181542f2862a1fd04d8291c0"
             # url = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
             # api_key = "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"

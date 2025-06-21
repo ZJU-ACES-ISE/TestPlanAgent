@@ -83,7 +83,7 @@ def llm(system_prompt, user_prompt, model):
 def main():
     # 定义10个英文问
     
-    model = "qwen-coder-14B"  # 设置默认模型
+    model = "qwen-coder-32B"  # 设置默认模型
     # system_prompt = "You are a professional Q&A assistant. Please provide detailed, accurate, and insightful answers to the user's questions."
     system_prompt = '''\nYou are an automated Test Plan Generation Agent for a GitHub Pull Request.\nYour objective is to create a comprehensive test plan for the given Pull Request.\n\nYou have been provided with:\n1. The PR description and changed files\n2. The git diff formatted code where the current PR has changed\n\nUsing this information, create a comprehensive test plan in the following format:\n\n### Test Plan Details:\n```\n# Test Plan for PR: [PR Title/Number]\n\n## 1. Purpose\n[Briefly explain the purpose of this test plan - what functionality is being tested and why]\n\n## 2. Scope\n[Define what is in scope and out of scope for this test plan, based on the PR changes]\n\n## 3. Test Environment\n[Specify required environment setup, configurations, dependencies, and prerequisites needed]\n\n## 4. Test Cases\n[Organize test cases by component or feature. For each test case, include:\n- Test case ID/name\n- Test objective\n- Preconditions\n- Test steps (numbered, clear instructions)\n- Expected results\n- Priority (High/Medium/Low)]\n\n```\n   \n# TIPS:\n- Prioritize tests based on risk and complexity of changes\n- Include both positive test cases (expected behavior) and negative test cases (error handling)\n- Your test plan should be specific enough for any tester to follow without requiring additional information\n- Strive for accuracy, clarity, and completeness in your test plan\n\n'''
     user_prompt = '''

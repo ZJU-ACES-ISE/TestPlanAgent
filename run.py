@@ -329,7 +329,7 @@ def main():
                        choices=['claude-3-7-sonnet-20250219', 'deepseek-chat', 'qwen-max-latest',
                                'gpt-3.5-turbo', 'qwen2.5-coder-32b-instruct', 
                                'qwen2.5-coder-14b-instruct'], 
-                       default='qwen-coder-14B',
+                       default='gpt-4o',
                        help='LLM model to use')
     
     # API设置
@@ -345,9 +345,9 @@ def main():
                        help='Save configuration to file')
     
     # 任务设置
-    parser.add_argument('--strategy', type=str, 
+    parser.add_argument('--strategy', type=str,
                        choices=['InOut', 'Embedding', 'ReAct', 'TOT'], 
-                       default='Embedding',
+                       default='InOut',
                        help='Test plan generation strategy')
     
     # 裁判设置

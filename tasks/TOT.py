@@ -187,15 +187,58 @@ class TOT(BaseTask):
                 
         # 最多可以进行step次迭代
         trajectory['react_info'] = []
-        while index <= step:
 
-            # 从LLM获取内容
-            content, truncated = self.llm(PR_TEST_PLAN_EDIT_SYSTEM_PROMPT, user_prompt, self.config['Agent']['llm_model'])
+        while index <= step:
+            session_messages = '\n'.join(session_message_list)
+            if index == step:
+                # 生成测试计划
+                test_plan_edit_prompt = PR_TEST_PLAN_EDIT_PROMPT.format(
+                    PR_Content=self.PR_Content,
+                    summaries=self.PR_Changed_Files,
+                    relevance_information=session_messages
+                )
+                
+                content, truncated = self.llm(
+                    PR_TEST_PLAN_EDIT_SYSTEM_PROMPT, 
+                    test_plan_edit_prompt,
+                    self.config['Agent']['llm_model']
+                )
+            else:
+                content, truncated = self.llm(PR_TEST_PLAN_EDIT_SYSTEM_PROMPT, user_prompt, self.config['Agent']['llm_model'])
+
+            if truncated and 'Test Plan Details' not in content:
+                # 生成测试计划
+                test_plan_edit_prompt = PR_TEST_PLAN_EDIT_PROMPT.format(
+                    PR_Content=self.PR_Content,
+                    summaries=self.PR_Changed_Files,
+                    relevance_information=session_messages
+                )
+                
+                content, truncated = self.llm(
+                    PR_TEST_PLAN_EDIT_SYSTEM_PROMPT, 
+                    test_plan_edit_prompt,
+                    self.config['Agent']['llm_model']
+                )
+
+            # 从LLM获取内容            
+            if 'Test Plan Details' in content:
+                thought_pattern = r'###\s*Thought:\s*(.*?)(?=###|$)'
+                test_plan_pattern = r'###\s*Test Plan Details:\s*```(.*?)```'
+
+                # 提取Thought部分
+                thought_match = re.search(thought_pattern, content, re.DOTALL | re.IGNORECASE)
+                if thought_match:
+                    thought = thought_match.group(1).strip()
+                
+                # 提取Test Plan Details部分
+                test_plan_match = re.search(test_plan_pattern, content, re.DOTALL | re.IGNORECASE)
+                if test_plan_match:
+                    test_plan = test_plan_match.group(1).strip()
+                    break
             
             # 提取思想行动对
-            ReAct_pair_list = self.extract_thought_action_pairs(content)
+            ReAct_pair_list = self.extract_thought_action_pairs(content)        
             
-            # 设置最大works进行并行处理
             if len(ReAct_pair_list) == 0:
                 print('No new ReAct pairs found.')
                 if react_pair_not_found == max_note_number:
@@ -237,7 +280,7 @@ class TOT(BaseTask):
                 - **Expected Information**: The exact code changes in the authentication module, which will be crucial for test planning.
                 ```
                 """
-                user_prompt =  PR_TEST_PLAN_CORRECT_PROMPT.format(
+                user_prompt = PR_TEST_PLAN_CORRECT_PROMPT.format(
                     PR_Project_Root_Dir=self.config['CKG']['project_dir'],
                     PR_Content=self.PR_Content,
                     summaries=self.PR_Changed_Files,
@@ -246,6 +289,8 @@ class TOT(BaseTask):
                 )
                 index += 1
                 continue
+
+            # 设置最大works进行并行处理
             max_workers = min(len(ReAct_pair_list), 10)
             # 清除某一轮exploration重试的次数
             react_pair_not_found = 0
@@ -322,21 +367,7 @@ class TOT(BaseTask):
             print("--------------------------------------\n")
             index += 1
         
-        # 结合所有会话消息
-        session_messages = '\n'.join(session_message_list)
-
-        # 生成测试计划
-        test_plan_edit_prompt = PR_TEST_PLAN_EDIT_PROMPT.format(
-            PR_Content=self.PR_Content,
-            summaries=self.PR_Changed_Files,
-            relevance_information=session_messages
-        )
         
-        test_plan, truncated = self.llm(
-            PR_TEST_PLAN_EDIT_SYSTEM_PROMPT, 
-            test_plan_edit_prompt,
-            self.config['Agent']['llm_model']
-        )
         trajectory['react_info'].append({
             'thought': "Generate test plan successfully",
             'test_plan': test_plan
@@ -345,10 +376,10 @@ class TOT(BaseTask):
         trajectory['user_prompt'] = user_prompt
         trajectory['error_content'] = error_content_list
         trajectory['if_truncated'] = truncated
-        if "Test Plan Details" in test_plan:
+
+        if test_plan != "":
         # 保存结果
             self.save_result(trajectory)
             return test_plan
         else:
             return None
-    
