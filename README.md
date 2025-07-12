@@ -1,2 +1,2 @@
 # TestPlanAgent
-a multiAgent framework to create test plan for pull request
+a agent framework to create test plan for pull request
